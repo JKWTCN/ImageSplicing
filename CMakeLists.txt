@@ -31,6 +31,8 @@ set(TS_FILES ImageSplicing_zh_CN.ts)
 if(ANDROID)
   add_library(ImageSplicing SHARED
     main.cpp
+    tools.cpp
+    tools.h
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
@@ -39,6 +41,8 @@ if(ANDROID)
 else()
   add_executable(ImageSplicing
     main.cpp
+    tools.cpp
+    tools.h
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui

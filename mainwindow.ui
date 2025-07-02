@@ -29,6 +29,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushButton_8">
+            <property name="text">
+             <string>保存文件</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_2">
             <property name="text">
              <string>横向拼接</string>
@@ -47,16 +54,23 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QCheckBox" name="checkBox_2">
+           <widget class="QCheckBox" name="checkBoxOpenReverse">
             <property name="text">
              <string>打开顺序反转</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="checkBox">
+           <widget class="QCheckBox" name="checkBox_3">
             <property name="text">
-             <string>自动拼接调整</string>
+             <string>拼接保存后删除源文件</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton">
+            <property name="text">
+             <string>自动调整</string>
             </property>
            </widget>
           </item>
@@ -129,8 +143,59 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton_5</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>upImagePosition()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>442</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>503</x>
+     <y>4</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_6</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>downImagePosition()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>487</x>
+     <y>91</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>426</x>
+     <y>98</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_7</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>deleteImagePosition()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>456</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>316</x>
+     <y>53</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>openFilesBtnPress()</slot>
+  <slot>upImagePosition()</slot>
+  <slot>downImagePosition()</slot>
+  <slot>deleteImagePosition()</slot>
  </slots>
 </ui>

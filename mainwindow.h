@@ -17,7 +17,11 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    void UpdateQListWidget();
 private slots:
     void openFilesBtnPress();
+    void upImagePosition();
+    void downImagePosition();
+    void deleteImagePosition();
 };
 #endif // MAINWINDOW_H
