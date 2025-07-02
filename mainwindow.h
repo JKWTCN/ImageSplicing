@@ -17,5 +17,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
+private slots:
+    void openFilesBtnPress();
 };
 #endif // MAINWINDOW_H
