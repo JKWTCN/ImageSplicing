@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)  # Updated version to avoid deprecation warning
 
 project(ImageSplicing LANGUAGES CXX)
 
@@ -11,22 +11,13 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# QtCreator supports the following variables for Android, which are identical to qmake Android variables.
-# Check http://doc.qt.io/qt-5/deployment-android.html for more information.
-# They need to be set before the find_package(Qt5 ...) call.
-
-#if(ANDROID)
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-#    if (ANDROID_ABI STREQUAL "armeabi-v7a")
-#        set(ANDROID_EXTRA_LIBS
-#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libcrypto.so
-#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libssl.so)
-#    endif()
-#endif()
-
 find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
 
 set(TS_FILES ImageSplicing_zh_CN.ts)
+
+# Add OpenCV find package before creating the target
+list(APPEND CMAKE_PREFIX_PATH "D:\\libs\\opencv\\build\\x64\\vc16\\lib")
+find_package(OpenCV REQUIRED)
 
 if(ANDROID)
   add_library(ImageSplicing SHARED
@@ -50,6 +41,13 @@ else()
   )
 endif()
 
-target_link_libraries(ImageSplicing PRIVATE Qt5::Widgets)
+# Link all libraries in one command to avoid mixing styles
+target_link_libraries(ImageSplicing PRIVATE
+    Qt5::Widgets
+    ${OpenCV_LIBS}
+)
+
+# Include OpenCV directories
+target_include_directories(ImageSplicing PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
