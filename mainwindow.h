@@ -24,5 +24,8 @@ private slots:
     void downImagePosition();
     void deleteImagePosition();
     void on_setting_action_triggered();
+    void autoSplicing();
+    void pushButton_verticalSplicing();
+    void pushButton_horizontalSplicing();
 };
 #endif // MAINWINDOW_H

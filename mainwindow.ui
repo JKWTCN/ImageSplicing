@@ -6,17 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>533</width>
-    <height>431</height>
+    <width>1366</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>ImageSplicing</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3" stretch="2,1,5">
+   <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,5">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="2,0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
@@ -36,48 +36,34 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_2">
+           <widget class="QPushButton" name="pushButton_4">
             <property name="text">
-             <string>横向拼接</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_3">
-            <property name="text">
-             <string>纵向拼接</string>
+             <string>人工调整</string>
             </property>
            </widget>
           </item>
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="QCheckBox" name="checkBoxOpenReverse">
+           <widget class="QPushButton" name="pushButton_autoSplicing">
             <property name="text">
-             <string>打开顺序反转</string>
+             <string>自动拼接</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="checkBox_3">
+           <widget class="QPushButton" name="pushButton_horizontalSplicing">
             <property name="text">
-             <string>拼接保存后删除源文件</string>
+             <string>横向拼接</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton">
+           <widget class="QPushButton" name="pushButton_verticalSplicing">
             <property name="text">
-             <string>自动调整</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_4">
-            <property name="text">
-             <string>人工调整</string>
+             <string>纵向拼接</string>
             </property>
            </widget>
           </item>
@@ -113,11 +99,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QListWidget" name="listImageFilesWidget"/>
-      </item>
-     </layout>
+     <widget class="QListWidget" name="listImageFilesWidget"/>
     </item>
     <item>
      <widget class="QGraphicsView" name="graphicsView"/>
@@ -129,8 +111,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>533</width>
-     <height>23</height>
+     <width>1366</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -184,8 +166,8 @@
    <slot>upImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>521</x>
-     <y>54</y>
+     <x>1208</x>
+     <y>59</y>
     </hint>
     <hint type="destinationlabel">
      <x>503</x>
@@ -200,8 +182,8 @@
    <slot>downImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>521</x>
-     <y>114</y>
+     <x>1208</x>
+     <y>125</y>
     </hint>
     <hint type="destinationlabel">
      <x>426</x>
@@ -216,12 +198,60 @@
    <slot>deleteImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>521</x>
-     <y>85</y>
+     <x>1208</x>
+     <y>92</y>
     </hint>
     <hint type="destinationlabel">
      <x>316</x>
      <y>53</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_autoSplicing</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>autoSplicing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>71</x>
+     <y>108</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>90</x>
+     <y>77</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_horizontalSplicing</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>horizontalSplicing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>328</x>
+     <y>116</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>268</x>
+     <y>81</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_verticalSplicing</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>verticalSplicing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>588</x>
+     <y>112</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>573</x>
+     <y>81</y>
     </hint>
    </hints>
   </connection>
@@ -231,5 +261,8 @@
   <slot>upImagePosition()</slot>
   <slot>downImagePosition()</slot>
   <slot>deleteImagePosition()</slot>
+  <slot>autoSplicing()</slot>
+  <slot>verticalSplicing()</slot>
+  <slot>horizontalSplicing()</slot>
  </slots>
 </ui>

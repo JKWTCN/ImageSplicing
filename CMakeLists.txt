@@ -13,33 +13,29 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
 
-set(TS_FILES ImageSplicing_zh_CN.ts)
+#set(TS_FILES ImageSplicing_zh_CN.ts)
 
 # Add OpenCV find package before creating the target
 list(APPEND CMAKE_PREFIX_PATH "D:\\libs\\opencv\\build\\x64\\vc16\\lib")
 find_package(OpenCV REQUIRED)
 
-if(ANDROID)
-    add_library(ImageSplicing SHARED
-        main.cpp
-        tools.cpp
-        tools.h
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
-        ${TS_FILES}
-        )
-else()
-    add_executable(ImageSplicing
-        main.cpp
-        tools.cpp
-        tools.h
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
-        ${TS_FILES}
-        )
-endif()
+include_directories(nlohmann)
+add_executable(ImageSplicing
+    main.cpp
+    tools.cpp
+    tools.h
+    mainwindow.cpp
+    mainwindow.h
+    mainwindow.ui
+    settingwindow.cpp
+    settingwindow.h
+    settingwindow.ui
+    setting.h
+    setting.cpp
+    enumerate.h
+    enumerate.cpp
+    ${TS_FILES}
+    )
 
 # Link all libraries in one command to avoid mixing styles
 target_link_libraries(ImageSplicing PRIVATE

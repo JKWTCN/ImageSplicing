@@ -2,6 +2,7 @@
 #define SETTINGWINDOW_H
 
 #include <QDialog>
+#include <tools.h>
 
 namespace Ui {
 class SettingWindow;
