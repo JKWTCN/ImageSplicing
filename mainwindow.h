@@ -23,5 +23,6 @@ private slots:
     void upImagePosition();
     void downImagePosition();
     void deleteImagePosition();
+    void on_setting_action_triggered();
 };
 #endif // MAINWINDOW_H

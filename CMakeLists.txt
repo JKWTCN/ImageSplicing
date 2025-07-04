@@ -20,32 +20,32 @@ list(APPEND CMAKE_PREFIX_PATH "D:\\libs\\opencv\\build\\x64\\vc16\\lib")
 find_package(OpenCV REQUIRED)
 
 if(ANDROID)
-  add_library(ImageSplicing SHARED
-    main.cpp
-    tools.cpp
-    tools.h
-    mainwindow.cpp
-    mainwindow.h
-    mainwindow.ui
-    ${TS_FILES}
-  )
+    add_library(ImageSplicing SHARED
+        main.cpp
+        tools.cpp
+        tools.h
+        mainwindow.cpp
+        mainwindow.h
+        mainwindow.ui
+        ${TS_FILES}
+        )
 else()
-  add_executable(ImageSplicing
-    main.cpp
-    tools.cpp
-    tools.h
-    mainwindow.cpp
-    mainwindow.h
-    mainwindow.ui
-    ${TS_FILES}
-  )
+    add_executable(ImageSplicing
+        main.cpp
+        tools.cpp
+        tools.h
+        mainwindow.cpp
+        mainwindow.h
+        mainwindow.ui
+        ${TS_FILES}
+        )
 endif()
 
 # Link all libraries in one command to avoid mixing styles
 target_link_libraries(ImageSplicing PRIVATE
     Qt5::Widgets
     ${OpenCV_LIBS}
-)
+    )
 
 # Include OpenCV directories
 target_include_directories(ImageSplicing PRIVATE ${OpenCV_INCLUDE_DIRS})

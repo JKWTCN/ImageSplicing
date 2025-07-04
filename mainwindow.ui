@@ -124,6 +124,40 @@
     </item>
    </layout>
   </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>533</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>设置</string>
+    </property>
+    <addaction name="setting_action"/>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>关于</string>
+    </property>
+    <addaction name="action_ImageSplicing"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_2"/>
+  </widget>
+  <action name="setting_action">
+   <property name="text">
+    <string>首选项</string>
+   </property>
+  </action>
+  <action name="action_ImageSplicing">
+   <property name="text">
+    <string>关于ImageSplicing</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
@@ -134,8 +168,8 @@
    <slot>openFilesBtnPress()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>64</x>
-     <y>32</y>
+     <x>76</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
      <x>6</x>
@@ -150,8 +184,8 @@
    <slot>upImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>442</x>
-     <y>20</y>
+     <x>521</x>
+     <y>54</y>
     </hint>
     <hint type="destinationlabel">
      <x>503</x>
@@ -166,8 +200,8 @@
    <slot>downImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>487</x>
-     <y>91</y>
+     <x>521</x>
+     <y>114</y>
     </hint>
     <hint type="destinationlabel">
      <x>426</x>
@@ -182,8 +216,8 @@
    <slot>deleteImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>456</x>
-     <y>55</y>
+     <x>521</x>
+     <y>85</y>
     </hint>
     <hint type="destinationlabel">
      <x>316</x>

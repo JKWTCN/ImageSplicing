@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QStringList>
 #include <tools.h>
+#include <opencv2/calib3d.hpp>
 using namespace std;
 
 QStringList filePaths ;//当前打开图片存储路径

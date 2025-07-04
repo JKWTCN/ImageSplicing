@@ -1,0 +1,4 @@
+C:/QtProject/ImageSplicing/build-ImageSplicing-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/CMakeFiles/ImageSplicing.dir
+C:/QtProject/ImageSplicing/build-ImageSplicing-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/CMakeFiles/edit_cache.dir
+C:/QtProject/ImageSplicing/build-ImageSplicing-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/CMakeFiles/rebuild_cache.dir
+C:/QtProject/ImageSplicing/build-ImageSplicing-Desktop_Qt_5_14_2_MinGW_64_bit-Debug/CMakeFiles/ImageSplicing_autogen.dir
