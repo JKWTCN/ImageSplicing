@@ -1,3 +1,0 @@
-# Hashes of file build rules.
-9d52d3cb2c7cf34d1903e47048ac3550 C:/QtProject/ImageSplicing/ImageSplicing_zh_CN.ts
-a942c256f2d871e36c2db1b77e72daa5 CMakeFiles/ImageSplicing_autogen
