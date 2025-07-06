@@ -16,7 +16,22 @@ enum PaddingType
 {
     PT_TRANSPARENT,
     PT_BLACK,
-    PT_WHITE
+    PT_WHITE,
+    PT_DARKGRAY,
+    PT_GRAY,
+    PT_LIGHTGRAY,
+    PT_RED,
+    PT_GREEN,
+    PT_BLUE,
+    PT_CYAN,
+    PT_MAGENTA,
+    PT_YELLOW,
+    PT_DARKRED,
+    PT_DARKGREEN,
+    PT_DARKBLUE,
+    PT_DARKCYAN,
+    PT_DARKMAGENTA,
+    PT_DARKYELLOW,
 };
 
 // 图像拼接类型
@@ -43,6 +58,16 @@ enum FeatureExtraction
     FE_SIFT,
     FE_SURF,
     FE_ORB
+};
+
+// 目前的拼接状态
+enum SplicingState
+{
+    SS_VERTICAL,
+    SS_HORIZONTAL,
+    SS_AUTO_VERTICAL,
+    SS_AUTO_HORIZONTAL,
+    SS_NONE
 };
 
 // 枚举转换工具函数

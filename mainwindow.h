@@ -2,9 +2,18 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <opencv2/opencv.hpp>
+#include <QSettings>
+#include <setting.h>
+#include <imagepro.hpp>
+#include <QWheelEvent>
+#include <QApplication>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+namespace Ui
+{
+    class MainWindow;
+}
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -24,8 +33,12 @@ private slots:
     void downImagePosition();
     void deleteImagePosition();
     void on_setting_action_triggered();
-    void autoSplicing();
-    void pushButton_verticalSplicing();
-    void pushButton_horizontalSplicing();
+    void on_pushButton_horizontalSplicing_clicked();
+    void on_pushButton_verticalSplicing_clicked();
+    void on_pushButton_save_clicked();
+    void on_pushButton_auto_clicked();
+
+protected:
+    void wheelEvent(QWheelEvent *event) override; // 重写滚轮事件
 };
 #endif // MAINWINDOW_H

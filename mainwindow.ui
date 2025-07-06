@@ -29,14 +29,20 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_8">
+           <widget class="QPushButton" name="pushButton_save">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>保存文件</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_4">
+           <widget class="QPushButton" name="pushButton_manual">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>人工调整</string>
             </property>
@@ -47,14 +53,10 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="QPushButton" name="pushButton_autoSplicing">
-            <property name="text">
-             <string>自动拼接</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="pushButton_horizontalSplicing">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>横向拼接</string>
             </property>
@@ -62,8 +64,21 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_verticalSplicing">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>纵向拼接</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_auto">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>自动调整</string>
             </property>
            </widget>
           </item>
@@ -75,6 +90,9 @@
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QPushButton" name="pushButton_5">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>上移</string>
           </property>
@@ -82,6 +100,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_7">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>删除</string>
           </property>
@@ -89,6 +110,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_6">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>下移</string>
           </property>
@@ -102,7 +126,11 @@
      <widget class="QListWidget" name="listImageFilesWidget"/>
     </item>
     <item>
-     <widget class="QGraphicsView" name="graphicsView"/>
+     <widget class="QGraphicsView" name="graphicsView_result">
+      <property name="dragMode">
+       <enum>QGraphicsView::ScrollHandDrag</enum>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -112,7 +140,7 @@
      <x>0</x>
      <y>0</y>
      <width>1366</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -204,54 +232,6 @@
     <hint type="destinationlabel">
      <x>316</x>
      <y>53</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pushButton_autoSplicing</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>autoSplicing()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>71</x>
-     <y>108</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>90</x>
-     <y>77</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pushButton_horizontalSplicing</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>horizontalSplicing()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>328</x>
-     <y>116</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>268</x>
-     <y>81</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pushButton_verticalSplicing</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>verticalSplicing()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>588</x>
-     <y>112</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>573</x>
-     <y>81</y>
     </hint>
    </hints>
   </connection>

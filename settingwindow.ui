@@ -88,7 +88,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
-        <widget class="QLabel" name="label_3">
+        <widget class="QLabel" name="label_paddingType">
          <property name="text">
           <string>填充颜色</string>
          </property>
@@ -98,17 +98,92 @@
         <widget class="QComboBox" name="comboBox_paddingType">
          <item>
           <property name="text">
-           <string>透明(PNG有效)</string>
+           <string>透明</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>黑</string>
+           <string>黑色</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>白</string>
+           <string>白色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>深灰色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>灰色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>浅灰色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>红色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>绿色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>蓝色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>青色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>洋红色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>黄色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>深红色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>深绿色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>深蓝色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>深青色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>深洋红色</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>深黄色</string>
           </property>
          </item>
         </widget>
