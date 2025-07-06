@@ -10,7 +10,8 @@
 #include <settingwindow.h>
 #include <ctime>
 #include <cstdio>
-
+#include "VerticalMovablePixmapItem.h"
+#include "HorizontalMovablePixmapItem.h"
 using namespace std;
 
 QStringList filePaths; // 当前打开图片存储路径
@@ -83,7 +84,13 @@ void MainWindow::openFilesBtnPress()
     // 从设置中获取上次使用的目录
     QSettings settings("iCloudWar", "ImageSplicing");
     QString lastDir = settings.value("LastOpenDirectory", QDir::homePath()).toString();
-
+    splicingState = SS_NONE;
+    filePaths.clear();
+    images.clear();
+    UpdateQListWidget();
+    QGraphicsScene *scene = new QGraphicsScene;
+    ui->graphicsView_result->setScene(scene);
+    ui->pushButton_auto->setEnabled(false);
     // 打开文件对话框，允许多选
     filePaths = QFileDialog::getOpenFileNames(
         this,       // 父窗口
@@ -124,6 +131,7 @@ void MainWindow::openFilesBtnPress()
 
 void MainWindow::upImagePosition()
 {
+    ClearResult();
     if (ui->listImageFilesWidget->selectedItems().isEmpty())
         return;
     int nowIndex = ui->listImageFilesWidget->currentRow();
@@ -141,6 +149,7 @@ void MainWindow::upImagePosition()
 
 void MainWindow::downImagePosition()
 {
+    ClearResult();
     if (ui->listImageFilesWidget->selectedItems().isEmpty())
         return;
     int nowIndex = ui->listImageFilesWidget->currentRow();
@@ -158,6 +167,7 @@ void MainWindow::downImagePosition()
 
 void MainWindow::deleteImagePosition()
 {
+    ClearResult();
     if (ui->listImageFilesWidget->selectedItems().isEmpty())
         return;
     int nowIndex = ui->listImageFilesWidget->currentRow();
@@ -173,9 +183,10 @@ void MainWindow::on_setting_action_triggered()
     settingWindow->activateWindow(); // 激活窗口并获取焦点
     settingWindow->raise();
 }
-
+// 横向拼接
 void MainWindow::on_pushButton_horizontalSplicing_clicked()
 {
+    images.clear();
     if (filePaths.length() == 0)
     {
         showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
@@ -230,32 +241,46 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
             }
         }
     }
-    cv::Mat result;
-    try
+    QGraphicsScene *scene = new QGraphicsScene(this);
+
+    // 初始X坐标
+    int xPos = 0;
+    const int verticalSpacing = 0;   // 垂直居中位置
+    const int horizontalSpacing = 0; // 图片间水平间距
+
+    // 将所有图像添加到场景中
+    for (const auto &image : images)
     {
-        cv::hconcat(images, result);
         // 将 OpenCV 的 BGR 格式转换为 RGB 格式
-        cv::cvtColor(result, result, cv::COLOR_BGR2RGB);
+        cv::Mat rgbImage;
+        cv::cvtColor(image, rgbImage, cv::COLOR_BGR2RGB);
+
         // 创建 QImage 并从 cv::Mat 复制数据
-        QImage qimg(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888);
+        QImage qimg(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step, QImage::Format_RGB888);
+
         // 将 QImage 转换为 QPixmap
         QPixmap pixmap = QPixmap::fromImage(qimg);
-        QGraphicsScene *scene = new QGraphicsScene;
-        scene->addPixmap(pixmap); // 传入转换后的 pixmap
-        ui->graphicsView_result->setScene(scene);
-        ui->pushButton_auto->setEnabled(true);
-        ui->pushButton_manual->setEnabled(true);
-        ui->pushButton_save->setEnabled(true);
+
+        // 创建自定义的可拖动项
+        HorizontalMovablePixmapItem *item = new HorizontalMovablePixmapItem(pixmap);
+        scene->addItem(item);
+
+        // 设置初始位置（垂直居中，水平按顺序排列）
+        item->setPos(xPos, verticalSpacing);
+        item->setZValue(0);
+
+        // 更新下一个图片的X位置
+        xPos += pixmap.width() + horizontalSpacing;
     }
-    catch (cv::Exception &e)
-    {
-        std::cerr << "OpenCV异常: " << e.what() << std::endl;
-        showErrorMessageBox("错误", e.what());
-    }
+    ui->pushButton_auto->setEnabled(true);
+    ui->pushButton_save->setEnabled(true);
+    ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
 }
 
+// 纵向拼接
 void MainWindow::on_pushButton_verticalSplicing_clicked()
 {
+    images.clear();
     if (filePaths.length() == 0)
     {
         showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
@@ -273,6 +298,7 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         }
         else
         {
+            cout << "Loaded image successfully:" << path.toLocal8Bit().constData();
             images.push_back(img);
         }
     }
@@ -283,7 +309,6 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         {
         case ST_HIGH2LOW:
             targetWidth = std::min(targetWidth, img.cols);
-
             break;
         case ST_LOW2HIGH:
             targetWidth = std::max(targetWidth, img.cols);
@@ -310,29 +335,42 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
             }
         }
     }
-    cv::Mat result;
-    try
+
+    QGraphicsScene *scene = new QGraphicsScene(this);
+
+    // 初始Y坐标
+    int yPos = 0;
+    const int horizontalSpacing = 0; // 水平居中位置
+    const int verticalSpacing = 0;   // 图片间垂直间距
+
+    // 将所有图像添加到场景中
+    for (const auto &image : images)
     {
-        cv::vconcat(images, result);
         // 将 OpenCV 的 BGR 格式转换为 RGB 格式
-        cv::cvtColor(result, result, cv::COLOR_BGR2RGB);
+        cv::Mat rgbImage;
+        cv::cvtColor(image, rgbImage, cv::COLOR_BGR2RGB);
+
         // 创建 QImage 并从 cv::Mat 复制数据
-        QImage qimg(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888);
+        QImage qimg(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step, QImage::Format_RGB888);
+
         // 将 QImage 转换为 QPixmap
         QPixmap pixmap = QPixmap::fromImage(qimg);
-        QGraphicsScene *scene = new QGraphicsScene;
-        scene->addPixmap(pixmap); // 传入转换后的 pixmap
-        ui->graphicsView_result->setScene(scene);
-        ui->pushButton_auto->setEnabled(true);
-        ui->pushButton_manual->setEnabled(true);
-        ui->pushButton_save->setEnabled(true);
+
+        // 创建自定义的可拖动项
+        VerticalMovablePixmapItem *item = new VerticalMovablePixmapItem(pixmap);
+        scene->addItem(item);
+
+        // 设置初始位置（水平居中，垂直按顺序排列）
+        item->setPos(horizontalSpacing, yPos);
+
+        // 更新下一个图片的Y位置
+        yPos += pixmap.height() + verticalSpacing;
     }
-    catch (cv::Exception &e)
-    {
-        std::cerr << "OpenCV异常: " << e.what() << std::endl;
-        showErrorMessageBox("错误", e.what());
-    }
+    ui->pushButton_auto->setEnabled(true);
+    ui->pushButton_save->setEnabled(true);
+    ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
 }
+// 自动拼接图像
 void MainWindow::on_pushButton_auto_clicked()
 {
     switch (splicingState)
@@ -342,6 +380,8 @@ void MainWindow::on_pushButton_auto_clicked()
         break;
     case SS_HORIZONTAL:
         splicingState = SS_AUTO_HORIZONTAL;
+        break;
+    default:
         break;
     }
 
@@ -356,6 +396,8 @@ void MainWindow::on_pushButton_auto_clicked()
             break;
         case SS_AUTO_HORIZONTAL:
             splicingState = SS_HORIZONTAL;
+            break;
+        default:
             break;
         }
         return;
@@ -373,7 +415,6 @@ void MainWindow::on_pushButton_auto_clicked()
         scene->addPixmap(pixmap); // 传入转换后的 pixmap
         ui->graphicsView_result->setScene(scene);
         ui->pushButton_auto->setEnabled(true);
-        ui->pushButton_manual->setEnabled(true);
         ui->pushButton_save->setEnabled(true);
     }
     catch (cv::Exception &e)
@@ -382,7 +423,8 @@ void MainWindow::on_pushButton_auto_clicked()
         showErrorMessageBox("错误", e.what());
     }
 }
-
+// 重写滚轮事件处理函数
+// 该函数用于处理滚轮事件，实现缩放功能
 void MainWindow::wheelEvent(QWheelEvent *event)
 {
     // 检查是否按下 Ctrl 键
@@ -408,13 +450,14 @@ void MainWindow::wheelEvent(QWheelEvent *event)
         QWidget::wheelEvent(event);
     }
 }
-
+// 保存图像
 void MainWindow::on_pushButton_save_clicked()
 {
     time_t now = time(0);
     QSettings settings("iCloudWar", "ImageSplicing");
     QString lastDir = settings.value("LastOpenDirectory", "ImageSplicing_" + QDir::homePath()).toString();
-
+    QGraphicsScene *scene = ui->graphicsView_result->scene();
+    scene->clearSelection();
     switch (setting.getSaveType())
     {
     case ST_PNG:
@@ -455,8 +498,22 @@ void MainWindow::on_pushButton_save_clicked()
     ui->pushButton_6->setEnabled(false);
     ui->pushButton_7->setEnabled(false);
     ui->pushButton_auto->setEnabled(false);
-    ui->pushButton_manual->setEnabled(false);
     ui->pushButton_save->setEnabled(false);
     splicingState = SS_NONE;
     UpdateQListWidget();
+}
+
+void MainWindow::ClearDisplay()
+{
+    ui->listImageFilesWidget->clear();
+    ClearResult();
+}
+
+void MainWindow::ClearResult()
+{
+    QGraphicsScene *scene = ui->graphicsView_result->scene();
+    if (scene)
+    {
+        scene->clear();
+    }
 }

@@ -27,6 +27,8 @@ public:
 private:
     Ui::MainWindow *ui;
     void UpdateQListWidget();
+    void ClearDisplay();
+    void ClearResult();
 private slots:
     void openFilesBtnPress();
     void upImagePosition();

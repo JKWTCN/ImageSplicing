@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,5">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="10,1">
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
@@ -35,16 +35,6 @@
             </property>
             <property name="text">
              <string>保存文件</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_manual">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>人工调整</string>
             </property>
            </widget>
           </item>

@@ -35,6 +35,10 @@ add_executable(ImageSplicing
     imagepro.hpp
     enumerate.h
     enumerate.cpp
+    VerticalMovablePixmapItem.h
+    VerticalMovablePixmapItem.cpp
+    HorizontalMovablePixmapItem.h
+    HorizontalMovablePixmapItem.cpp
     ${TS_FILES}
 )
 
