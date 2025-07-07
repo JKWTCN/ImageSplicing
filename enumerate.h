@@ -11,8 +11,8 @@ enum SaveType
     ST_JPG
 };
 
-// 边缘填充类型
-enum PaddingType
+// 边缘填充颜色类型
+enum PaddingColorType
 {
     PT_TRANSPARENT,
     PT_BLACK,
@@ -81,9 +81,9 @@ namespace EnumConverter
     std::string splicingTypeToString(SplicingType type);
     SplicingType stringToSplicingType(const std::string &str);
 
-    // PaddingType 转换
-    std::string paddingTypeToString(PaddingType type);
-    PaddingType stringToPaddingType(const std::string &str);
+    // PaddingColorType 转换
+    std::string paddingColorTypeToString(PaddingColorType type);
+    PaddingColorType stringToPaddingColorType(const std::string &str);
 
     // InterpolationType 转换
     std::string interpolationTypeToString(InterpolationType type);

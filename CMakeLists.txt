@@ -30,8 +30,7 @@ add_executable(ImageSplicing
     settingwindow.cpp
     settingwindow.h
     settingwindow.ui
-    setting.h
-    setting.cpp
+    config.hpp
     imagepro.hpp
     enumerate.h
     enumerate.cpp

@@ -1,31 +1,29 @@
 #include "settingwindow.h"
 #include "ui_settingwindow.h"
 #include <tools.hpp>
+#include <config.hpp>
 SettingWindow::SettingWindow(QWidget *parent) : QDialog(parent),
                                                 ui(new Ui::SettingWindow)
 {
     ui->setupUi(this);
-    Setting setting = GetSetting();
-    ui->checkBox_openReverse->setChecked(setting.getopenReverse());
-    ui->checkBox_finishRAWPhicture->setChecked(setting.getfinishRAWPhicture());
-    ui->comboBox_saveType->setCurrentIndex(static_cast<int>(setting.getSaveType()));
-    ui->comboBox_splicingType->setCurrentIndex(static_cast<int>(setting.getSplicingType()));
-    ui->comboBox_paddingType->setCurrentIndex(static_cast<int>(setting.getPaddingType()));
-    ui->comboBox_narrowType->setCurrentIndex(static_cast<int>(setting.getNarrowType()));
-    ui->comboBox_shrinkType->setCurrentIndex(static_cast<int>(setting.getShrinkType()));
-    ui->comboBox_featureExtraction->setCurrentIndex(static_cast<int>(setting.getFeatureExtraction()));
+    ui->checkBox_openReverse->setChecked(GetOpenReverseConfig());
+    ui->checkBox_finishRAWPhicture->setChecked(GetFinishRAWPhictureConfig());
+    ui->comboBox_saveType->setCurrentIndex(static_cast<int>(GetSaveTypeConfig()));
+    ui->comboBox_splicingType->setCurrentIndex(static_cast<int>(GetSplicingTypeConfig()));
+    ui->comboBox_paddingType->setCurrentIndex(static_cast<int>(GetPaddingColorTypeConfig()));
+    ui->comboBox_narrowType->setCurrentIndex(static_cast<int>(GetNarrowTypeConfig()));
+    ui->comboBox_shrinkType->setCurrentIndex(static_cast<int>(GetShrinkTypeConfig()));
+    ui->comboBox_featureExtraction->setCurrentIndex(static_cast<int>(GetFeatureExtractionConfig()));
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, [this]()
             {
-        Setting setting;
-        setting.setopenReverse(ui->checkBox_openReverse->isChecked());
-        setting.setfinishRAWPhicture(ui->checkBox_finishRAWPhicture->isChecked());
-        setting.setSaveType(static_cast<SaveType>(ui->comboBox_saveType->currentIndex()));
-        setting.setSplicingType(static_cast<SplicingType>(ui->comboBox_splicingType->currentIndex()));
-        setting.setPaddingType(static_cast<PaddingType>(ui->comboBox_paddingType->currentIndex()));
-        setting.setNarrowType(static_cast<InterpolationType>(ui->comboBox_narrowType->currentIndex()));
-        setting.setShrinkType(static_cast<InterpolationType>(ui->comboBox_shrinkType->currentIndex()));
-        setting.setFeatureExtraction(static_cast<FeatureExtraction>(ui->comboBox_featureExtraction->currentIndex()));
-        SetSetting(setting);
+        SetOpenReverseConfig(ui->checkBox_openReverse->isChecked());
+        SetFinishRAWPhictureConfig(ui->checkBox_finishRAWPhicture->isChecked());
+        SetSaveTypeConfig(static_cast<SaveType>(ui->comboBox_saveType->currentIndex()));
+        SetSplicingTypeConfig(static_cast<SplicingType>(ui->comboBox_splicingType->currentIndex()));
+        SetPaddingColorTypeConfig(static_cast<PaddingColorType>(ui->comboBox_paddingType->currentIndex()));
+        SetNarrowTypeConfig(static_cast<InterpolationType>(ui->comboBox_narrowType->currentIndex()));
+        SetShrinkTypeConfig(static_cast<InterpolationType>(ui->comboBox_shrinkType->currentIndex()));
+        SetFeatureExtractionConfig(static_cast<FeatureExtraction>(ui->comboBox_featureExtraction->currentIndex()));
         this->close(); });
     connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &SettingWindow::close);
     QListView *view = qobject_cast<QListView *>(ui->comboBox_splicingType->view());

@@ -53,10 +53,10 @@ namespace EnumConverter
         throw invalid_argument("Invalid SplicingType string: " + str);
     }
 
-    // PaddingType 转换实现
-    string paddingTypeToString(PaddingType type)
+    // PaddingColorType 转换实现
+    string paddingColorTypeToString(PaddingColorType type)
     {
-        static const map<PaddingType, string> names = {
+        static const map<PaddingColorType, string> names = {
             {PT_TRANSPARENT, "PT_TRANSPARENT"},
             {PT_BLACK, "PT_BLACK"},
             {PT_WHITE, "PT_WHITE"}};
@@ -64,9 +64,9 @@ namespace EnumConverter
         return it != names.end() ? it->second : "UNKNOWN";
     }
 
-    PaddingType stringToPaddingType(const string &str)
+    PaddingColorType stringToPaddingType(const string &str)
     {
-        static const map<string, PaddingType> types = {
+        static const map<string, PaddingColorType> types = {
             {"PT_TRANSPARENT", PT_TRANSPARENT},
             {"PT_BLACK", PT_BLACK},
             {"PT_WHITE", PT_WHITE}};

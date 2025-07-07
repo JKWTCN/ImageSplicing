@@ -4,7 +4,6 @@
 #include <QMainWindow>
 #include <opencv2/opencv.hpp>
 #include <QSettings>
-#include <setting.h>
 #include <imagepro.hpp>
 #include <QWheelEvent>
 #include <QApplication>

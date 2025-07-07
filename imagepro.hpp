@@ -9,7 +9,7 @@
 #include <QSettings>
 #include <tools.hpp>
 #include <QString>
-static Qt::GlobalColor PaddingType2QtColor(PaddingType type)
+static Qt::GlobalColor PaddingColorType2QtColor(PaddingColorType type)
 {
     switch (type)
     {

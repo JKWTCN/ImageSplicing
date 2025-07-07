@@ -1,6 +1,5 @@
 #include <string>
 #include <QString>
-#include <setting.h>
 #include "nlohmann/json.hpp"
 #include <fstream>
 #include <iostream>
@@ -56,21 +55,6 @@ static void WriteStringIntoFile(const string &text, const string &path)
         exit(EXIT_FAILURE);
     }
 }
-static Setting GetSetting()
-{
-    Setting setting = Setting();
-    ifstream settingJson("setting.json");
-    if (settingJson.good())
-    {
-        setting.fromJson(ReadFileIntoString("setting.json"));
-    }
-    else
-    {
-        WriteStringIntoFile(setting.toJson(), "setting.json");
-    }
-
-    return setting;
-}
 
 static void showInfoMessageBox(string title, string content)
 {
@@ -102,10 +86,7 @@ static void showQuestionMessageBox(string title, string content)
                           QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 }
 
-static void SetSetting(Setting setting)
-{
-    WriteStringIntoFile(setting.toJson(), "setting.json");
-}
+
 
 static QStringList OpenImagePaths(){
     // 设置文件过滤器

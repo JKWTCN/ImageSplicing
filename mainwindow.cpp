@@ -12,10 +12,10 @@
 #include <cstdio>
 #include "VerticalMovablePixmapItem.h"
 #include "HorizontalMovablePixmapItem.h"
+#include "config.hpp"
 using namespace std;
 
 QStringList filePaths; // 当前打开图片存储路径
-Setting setting;
 SplicingState splicingState = SS_NONE;
 vector<cv::Mat> images;
 
@@ -23,16 +23,15 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setting = GetSetting();
-    if (setting.getSplicingType() != ST_RAW)
-        setting.setPaddingType(PT_TRANSPARENT);
+    if (GetSplicingTypeConfig() != ST_RAW)
+        SetPaddingColorTypeConfig(PT_TRANSPARENT);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
-//手动刷新界面
+// 手动刷新界面
 void MainWindow::UpdateQListWidget()
 {
     ui->listImageFilesWidget->clear();
@@ -68,7 +67,7 @@ void MainWindow::UpdateQListWidget()
         break;
     }
 }
-//打开文件按钮事件
+// 打开文件按钮事件
 void MainWindow::openFilesBtnPress()
 {
 
@@ -81,8 +80,8 @@ void MainWindow::openFilesBtnPress()
     ui->graphicsView_result->setScene(scene);
     ui->pushButton_auto->setEnabled(false);
 
-    filePaths=OpenImagePaths();
-    if (setting.getopenReverse())
+    filePaths = OpenImagePaths();
+    if (GetOpenReverseConfig())
     {
         QStringList tmp = filePaths;
         for (int i = 0; i < tmp.length(); i++)
@@ -130,7 +129,7 @@ void MainWindow::downImagePosition()
         ui->listImageFilesWidget->setCurrentRow(0);
     ui->listImageFilesWidget->setFocus();
 }
-//删除图片按钮事件
+// 删除图片按钮事件
 void MainWindow::deleteImagePosition()
 {
     ClearResult();
@@ -140,7 +139,7 @@ void MainWindow::deleteImagePosition()
     filePaths.removeAt(nowIndex);
     UpdateQListWidget();
 }
-//打开设置界面
+// 打开设置界面
 void MainWindow::on_setting_action_triggered()
 {
     SettingWindow *settingWindow = new SettingWindow();
@@ -151,15 +150,17 @@ void MainWindow::on_setting_action_triggered()
     settingWindow->raise();
 }
 
-//解锁图片位置调整按钮
-void MainWindow::UnlockPostionButton(){
+// 解锁图片位置调整按钮
+void MainWindow::UnlockPostionButton()
+{
     ui->pushButton_5->setEnabled(true);
     ui->pushButton_6->setEnabled(true);
     ui->pushButton_7->setEnabled(true);
 }
 
-//锁定图片位置调整按钮
-void MainWindow::LockPostionButton(){
+// 锁定图片位置调整按钮
+void MainWindow::LockPostionButton()
+{
     ui->pushButton_5->setEnabled(false);
     ui->pushButton_6->setEnabled(false);
     ui->pushButton_7->setEnabled(false);
@@ -167,10 +168,11 @@ void MainWindow::LockPostionButton(){
 // 横向拼接
 void MainWindow::on_pushButton_horizontalSplicing_clicked()
 {
-    if(filePaths.length()==0){
+    if (filePaths.length() == 0)
+    {
         images.clear();
-        filePaths=OpenImagePaths();
-        if (setting.getopenReverse())
+        filePaths = OpenImagePaths();
+        if (GetOpenReverseConfig())
         {
             QStringList tmp = filePaths;
             for (int i = 0; i < tmp.length(); i++)
@@ -204,7 +206,7 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
     int targetHeight = images[0].rows;
     for (const auto &img : images)
     {
-        switch (setting.getSplicingType())
+        switch (GetSplicingTypeConfig())
         {
         case ST_HIGH2LOW:
             targetHeight = std::min(targetHeight, img.rows);
@@ -221,13 +223,13 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
     {
         if (img.rows != targetHeight)
         {
-            switch (setting.getSplicingType())
+            switch (GetSplicingTypeConfig())
             {
             case ST_HIGH2LOW:
-                img = ResizeByHeight(img, targetHeight, setting.getShrinkType());
+                img = ResizeByHeight(img, targetHeight, GetShrinkTypeConfig());
                 break;
             case ST_LOW2HIGH:
-                img = ResizeByHeight(img, targetHeight, setting.getNarrowType());
+                img = ResizeByHeight(img, targetHeight, GetNarrowTypeConfig());
                 break;
             case ST_RAW:
                 break;
@@ -273,10 +275,11 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
 // 纵向拼接
 void MainWindow::on_pushButton_verticalSplicing_clicked()
 {
-    if(filePaths.length()==0){
+    if (filePaths.length() == 0)
+    {
         images.clear();
-        filePaths=OpenImagePaths();
-        if (setting.getopenReverse())
+        filePaths = OpenImagePaths();
+        if (GetOpenReverseConfig())
         {
             QStringList tmp = filePaths;
             for (int i = 0; i < tmp.length(); i++)
@@ -310,7 +313,7 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     int targetWidth = images[0].cols;
     for (const auto &img : images)
     {
-        switch (setting.getSplicingType())
+        switch (GetSplicingTypeConfig())
         {
         case ST_HIGH2LOW:
             targetWidth = std::min(targetWidth, img.cols);
@@ -327,13 +330,13 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     {
         if (img.cols != targetWidth)
         {
-            switch (setting.getSplicingType())
+            switch (GetSplicingTypeConfig())
             {
             case ST_HIGH2LOW:
-                img = ResizeByWidth(img, targetWidth, setting.getShrinkType());
+                img = ResizeByWidth(img, targetWidth, GetShrinkTypeConfig());
                 break;
             case ST_LOW2HIGH:
-                img = ResizeByWidth(img, targetWidth, setting.getShrinkType());
+                img = ResizeByWidth(img, targetWidth, GetShrinkTypeConfig());
                 break;
             case ST_RAW:
                 break;
@@ -463,19 +466,19 @@ void MainWindow::on_pushButton_save_clicked()
     QString lastDir = settings.value("LastOpenDirectory", "ImageSplicing_" + QDir::homePath()).toString();
     QGraphicsScene *scene = ui->graphicsView_result->scene();
     scene->clearSelection();
-    switch (setting.getSaveType())
+    switch (GetSaveTypeConfig())
     {
     case ST_PNG:
-        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingType2QtColor(setting.getPaddingType()));
+        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
         break;
     case ST_JPG:
-        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".jpg", PaddingType2QtColor(setting.getPaddingType()));
+        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".jpg", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
         break;
     default:
-        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingType2QtColor(setting.getPaddingType()));
+        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
         break;
     }
-    if (setting.getfinishRAWPhicture())
+    if (GetFinishRAWPhictureConfig())
     {
         bool allDeleted = true;
         for (const auto &path : filePaths)
