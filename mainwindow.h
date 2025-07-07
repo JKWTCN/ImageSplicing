@@ -29,6 +29,8 @@ private:
     void UpdateQListWidget();
     void ClearDisplay();
     void ClearResult();
+    void UnlockPostionButton();
+    void LockPostionButton();
 private slots:
     void openFilesBtnPress();
     void upImagePosition();

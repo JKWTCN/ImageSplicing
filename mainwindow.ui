@@ -45,7 +45,7 @@
           <item>
            <widget class="QPushButton" name="pushButton_horizontalSplicing">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="text">
              <string>横向拼接</string>
@@ -55,7 +55,7 @@
           <item>
            <widget class="QPushButton" name="pushButton_verticalSplicing">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="text">
              <string>纵向拼接</string>
@@ -130,7 +130,7 @@
      <x>0</x>
      <y>0</y>
      <width>1366</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">

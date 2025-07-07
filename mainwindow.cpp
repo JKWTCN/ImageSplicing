@@ -32,7 +32,7 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-
+//手动刷新界面
 void MainWindow::UpdateQListWidget()
 {
     ui->listImageFilesWidget->clear();
@@ -68,45 +68,20 @@ void MainWindow::UpdateQListWidget()
         break;
     }
 }
-
+//打开文件按钮事件
 void MainWindow::openFilesBtnPress()
 {
-    // 设置文件过滤器
-    QString filter = "All Image Files (*.JPG *.jpeg *.PNG *.bmp *.gif *.tif *.tiff *.ico);;"
-                     "JPEG Files (*.JPG *.jpeg);;"
-                     "PNG Files (*.PNG);;"
-                     "Bitmap Files (*.bmp);;"
-                     "GIF Files (*.gif);;"
-                     "TIFF Files (*.tif *.tiff);;"
-                     "Icon Files (*.ico);;"
-                     "All Files (*.*)";
 
-    // 从设置中获取上次使用的目录
-    QSettings settings("iCloudWar", "ImageSplicing");
-    QString lastDir = settings.value("LastOpenDirectory", QDir::homePath()).toString();
     splicingState = SS_NONE;
     filePaths.clear();
     images.clear();
     UpdateQListWidget();
+
     QGraphicsScene *scene = new QGraphicsScene;
     ui->graphicsView_result->setScene(scene);
     ui->pushButton_auto->setEnabled(false);
-    // 打开文件对话框，允许多选
-    filePaths = QFileDialog::getOpenFileNames(
-        this,       // 父窗口
-        "选择文件", // 对话框标题
-        lastDir,    // 使用上次的目录作为初始目录
-        filter      // 文件过滤器
-    );
 
-    // 如果选择了文件，保存当前目录
-    if (!filePaths.isEmpty())
-    {
-        // 获取第一个文件的目录路径
-        QString currentDir = QFileInfo(filePaths.first()).absolutePath();
-        settings.setValue("LastOpenDirectory", currentDir);
-    }
-
+    filePaths=OpenImagePaths();
     if (setting.getopenReverse())
     {
         QStringList tmp = filePaths;
@@ -116,16 +91,7 @@ void MainWindow::openFilesBtnPress()
         }
     }
 
-    // 检查是否选择了文件
-    if (filePaths.isEmpty())
-    {
-        return; // 用户取消了选择
-    }
-    ui->pushButton_verticalSplicing->setEnabled(true);
-    ui->pushButton_horizontalSplicing->setEnabled(true);
-    ui->pushButton_5->setEnabled(true);
-    ui->pushButton_6->setEnabled(true);
-    ui->pushButton_7->setEnabled(true);
+    UnlockPostionButton();
     UpdateQListWidget();
 }
 
@@ -164,7 +130,7 @@ void MainWindow::downImagePosition()
         ui->listImageFilesWidget->setCurrentRow(0);
     ui->listImageFilesWidget->setFocus();
 }
-
+//删除图片按钮事件
 void MainWindow::deleteImagePosition()
 {
     ClearResult();
@@ -174,6 +140,7 @@ void MainWindow::deleteImagePosition()
     filePaths.removeAt(nowIndex);
     UpdateQListWidget();
 }
+//打开设置界面
 void MainWindow::on_setting_action_triggered()
 {
     SettingWindow *settingWindow = new SettingWindow();
@@ -183,14 +150,40 @@ void MainWindow::on_setting_action_triggered()
     settingWindow->activateWindow(); // 激活窗口并获取焦点
     settingWindow->raise();
 }
+
+//解锁图片位置调整按钮
+void MainWindow::UnlockPostionButton(){
+    ui->pushButton_5->setEnabled(true);
+    ui->pushButton_6->setEnabled(true);
+    ui->pushButton_7->setEnabled(true);
+}
+
+//锁定图片位置调整按钮
+void MainWindow::LockPostionButton(){
+    ui->pushButton_5->setEnabled(false);
+    ui->pushButton_6->setEnabled(false);
+    ui->pushButton_7->setEnabled(false);
+}
 // 横向拼接
 void MainWindow::on_pushButton_horizontalSplicing_clicked()
 {
-    images.clear();
-    if (filePaths.length() == 0)
-    {
-        showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
-        return;
+    if(filePaths.length()==0){
+        images.clear();
+        filePaths=OpenImagePaths();
+        if (setting.getopenReverse())
+        {
+            QStringList tmp = filePaths;
+            for (int i = 0; i < tmp.length(); i++)
+            {
+                filePaths[i] = tmp[tmp.length() - i - 1];
+            }
+        }
+        UnlockPostionButton();
+        if (filePaths.length() == 0)
+        {
+            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
+            return;
+        }
     }
     splicingState = SS_HORIZONTAL;
 
@@ -280,11 +273,23 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
 // 纵向拼接
 void MainWindow::on_pushButton_verticalSplicing_clicked()
 {
-    images.clear();
-    if (filePaths.length() == 0)
-    {
-        showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
-        return;
+    if(filePaths.length()==0){
+        images.clear();
+        filePaths=OpenImagePaths();
+        if (setting.getopenReverse())
+        {
+            QStringList tmp = filePaths;
+            for (int i = 0; i < tmp.length(); i++)
+            {
+                filePaths[i] = tmp[tmp.length() - i - 1];
+            }
+        }
+        UnlockPostionButton();
+        if (filePaths.length() == 0)
+        {
+            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
+            return;
+        }
     }
     splicingState = SS_VERTICAL;
     // 加载所有图片
@@ -370,7 +375,7 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     ui->pushButton_save->setEnabled(true);
     ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
 }
-// 自动拼接图像
+// 自动调整图像
 void MainWindow::on_pushButton_auto_clicked()
 {
     switch (splicingState)
@@ -492,11 +497,8 @@ void MainWindow::on_pushButton_save_clicked()
     }
     filePaths.clear();
     images.clear();
-    ui->pushButton_verticalSplicing->setEnabled(false);
-    ui->pushButton_horizontalSplicing->setEnabled(false);
-    ui->pushButton_5->setEnabled(false);
-    ui->pushButton_6->setEnabled(false);
-    ui->pushButton_7->setEnabled(false);
+
+    LockPostionButton();
     ui->pushButton_auto->setEnabled(false);
     ui->pushButton_save->setEnabled(false);
     splicingState = SS_NONE;

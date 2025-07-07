@@ -1,4 +1,3 @@
-
 #include <string>
 #include <QString>
 #include <setting.h>
@@ -8,6 +7,9 @@
 #include <sstream>
 #include <QMessageBox>
 #include <memory>
+#include <QSettings>
+#include <QDir>
+#include <QFileDialog>
 using json = nlohmann::json;
 
 using namespace std;
@@ -103,4 +105,37 @@ static void showQuestionMessageBox(string title, string content)
 static void SetSetting(Setting setting)
 {
     WriteStringIntoFile(setting.toJson(), "setting.json");
+}
+
+static QStringList OpenImagePaths(){
+    // 设置文件过滤器
+    QString filter = "All Image Files (*.JPG *.jpeg *.PNG *.bmp *.gif *.tif *.tiff *.ico);;"
+                     "JPEG Files (*.JPG *.jpeg);;"
+                     "PNG Files (*.PNG);;"
+                     "Bitmap Files (*.bmp);;"
+                     "GIF Files (*.gif);;"
+                     "TIFF Files (*.tif *.tiff);;"
+                     "Icon Files (*.ico);;"
+                     "All Files (*.*)";
+    // 从设置中获取上次使用的目录
+    QSettings settings("iCloudWar", "ImageSplicing");
+    QString lastDir = settings.value("LastOpenDirectory", QDir::homePath()).toString();
+
+    // 打开文件对话框，允许多选
+    QStringList filePaths = QFileDialog::getOpenFileNames(
+        nullptr,       // 父窗口
+        "选择文件", // 对话框标题
+        lastDir,    // 使用上次的目录作为初始目录
+        filter      // 文件过滤器
+    );
+
+    // 如果选择了文件，保存当前目录
+    if (!filePaths.isEmpty())
+    {
+        // 获取第一个文件的目录路径
+        QString currentDir = QFileInfo(filePaths.first()).absolutePath();
+        settings.setValue("LastOpenDirectory", currentDir);
+    }
+
+    return filePaths;
 }
