@@ -19,3 +19,11 @@ QVariant HorizontalMovablePixmapItem::itemChange(GraphicsItemChange change, cons
     }
     return QGraphicsPixmapItem::itemChange(change, value);
 }
+
+void HorizontalMovablePixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    painter->save();
+    painter->setClipRect(QRectF(50, 50, 100, 100)); // 只绘制指定区域
+    QGraphicsPixmapItem::paint(painter, option, widget);
+    painter->restore();
+}

@@ -1,5 +1,5 @@
 #include <QGraphicsPixmapItem>
-
+#include <QPainter>
 class HorizontalMovablePixmapItem : public QGraphicsPixmapItem
 {
 public:
@@ -7,4 +7,5 @@ public:
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 };

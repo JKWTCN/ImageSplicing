@@ -36,7 +36,7 @@ void MainWindow::UpdateQListWidget()
 {
     ui->listImageFilesWidget->clear();
     ui->listImageFilesWidget->setViewMode(QListWidget::IconMode);
-    //    ui->listImageFilesWidget->setIconSize(QSize(100, 100));//设置图片大小
+        //    ui->listImageFilesWidget->setIconSize(QSize(100, 100));//设置图片大小
     ui->listImageFilesWidget->setSpacing(10);                   // 间距
     ui->listImageFilesWidget->setResizeMode(QListView::Adjust); // 适应布局调整
     ui->listImageFilesWidget->setMovement(QListView::Static);   // 不能移动
@@ -168,9 +168,10 @@ void MainWindow::LockPostionButton()
 // 横向拼接
 void MainWindow::on_pushButton_horizontalSplicing_clicked()
 {
+    images.clear();
     if (filePaths.length() == 0)
     {
-        images.clear();
+
         filePaths = OpenImagePaths();
         if (GetOpenReverseConfig())
         {
@@ -275,9 +276,10 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
 // 纵向拼接
 void MainWindow::on_pushButton_verticalSplicing_clicked()
 {
+    images.clear();
     if (filePaths.length() == 0)
     {
-        images.clear();
+
         filePaths = OpenImagePaths();
         if (GetOpenReverseConfig())
         {
@@ -507,13 +509,13 @@ void MainWindow::on_pushButton_save_clicked()
     splicingState = SS_NONE;
     UpdateQListWidget();
 }
-
+// 清除所有显示
 void MainWindow::ClearDisplay()
 {
     ui->listImageFilesWidget->clear();
     ClearResult();
 }
-
+// 清除结果显示
 void MainWindow::ClearResult()
 {
     QGraphicsScene *scene = ui->graphicsView_result->scene();
