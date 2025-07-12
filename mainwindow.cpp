@@ -36,7 +36,7 @@ void MainWindow::UpdateQListWidget()
 {
     ui->listImageFilesWidget->clear();
     ui->listImageFilesWidget->setViewMode(QListWidget::IconMode);
-        //    ui->listImageFilesWidget->setIconSize(QSize(100, 100));//设置图片大小
+    //ui->listImageFilesWidget->setIconSize(QSize(100, 100));//设置图片大小
     ui->listImageFilesWidget->setSpacing(10);                   // 间距
     ui->listImageFilesWidget->setResizeMode(QListView::Adjust); // 适应布局调整
     ui->listImageFilesWidget->setMovement(QListView::Static);   // 不能移动
@@ -46,27 +46,31 @@ void MainWindow::UpdateQListWidget()
         QListWidgetItem *imageItem = new QListWidgetItem;
         imageItem->setIcon(QIcon(filePaths[i]));
         imageItem->setText(QString::fromStdString(GetFileName(filePaths[i].toStdString())));
-        imageItem->setSizeHint(QSize(120, 100));
+//        imageItem->setSizeHint(QSize(120, 100));
         ui->listImageFilesWidget->addItem(imageItem);
     }
-    switch (splicingState)
-    {
-    case SS_VERTICAL:
-        MainWindow::on_pushButton_verticalSplicing_clicked();
-        break;
-    case SS_HORIZONTAL:
-        MainWindow::on_pushButton_horizontalSplicing_clicked();
-        break;
-    case SS_AUTO_HORIZONTAL:
-        MainWindow::on_pushButton_auto_clicked();
-        break;
-    case SS_AUTO_VERTICAL:
-        MainWindow::on_pushButton_auto_clicked();
-        break;
-    case SS_NONE:
-        break;
-    }
 }
+//刷新拼接图片
+void MainWindow::ReFreshResultWidget(){
+        switch (splicingState)
+        {
+        case SS_VERTICAL:
+            MainWindow::on_pushButton_verticalSplicing_clicked();
+            break;
+        case SS_HORIZONTAL:
+            MainWindow::on_pushButton_horizontalSplicing_clicked();
+            break;
+        case SS_AUTO_HORIZONTAL:
+            MainWindow::on_pushButton_auto_clicked();
+            break;
+        case SS_AUTO_VERTICAL:
+            MainWindow::on_pushButton_auto_clicked();
+            break;
+        case SS_NONE:
+            break;
+        }
+}
+
 // 打开文件按钮事件
 void MainWindow::openFilesBtnPress()
 {
@@ -93,7 +97,7 @@ void MainWindow::openFilesBtnPress()
     UnlockPostionButton();
     UpdateQListWidget();
 }
-
+//图片排序 上
 void MainWindow::upImagePosition()
 {
     ClearResult();
@@ -105,13 +109,14 @@ void MainWindow::upImagePosition()
     else
         filePaths.move(nowIndex, filePaths.length() - 1);
     UpdateQListWidget();
+    ReFreshResultWidget();
     if (nowIndex != 0)
         ui->listImageFilesWidget->setCurrentRow(nowIndex - 1);
     else
         ui->listImageFilesWidget->setCurrentRow(filePaths.length() - 1);
     ui->listImageFilesWidget->setFocus();
 }
-
+//图片排序 下
 void MainWindow::downImagePosition()
 {
     ClearResult();
@@ -123,6 +128,7 @@ void MainWindow::downImagePosition()
     else
         filePaths.move(nowIndex, 0);
     UpdateQListWidget();
+    ReFreshResultWidget();
     if (nowIndex <= filePaths.length() - 2)
         ui->listImageFilesWidget->setCurrentRow(nowIndex + 1);
     else
@@ -189,7 +195,7 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         }
     }
     splicingState = SS_HORIZONTAL;
-
+UpdateQListWidget();
     // 加载所有图片
     for (const auto &path : filePaths)
     {
@@ -277,6 +283,7 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
 void MainWindow::on_pushButton_verticalSplicing_clicked()
 {
     images.clear();
+
     if (filePaths.length() == 0)
     {
 
@@ -297,6 +304,7 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         }
     }
     splicingState = SS_VERTICAL;
+    UpdateQListWidget();
     // 加载所有图片
     for (const auto &path : filePaths)
     {

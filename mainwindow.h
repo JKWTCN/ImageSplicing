@@ -30,6 +30,7 @@ private:
     void ClearResult();
     void UnlockPostionButton();
     void LockPostionButton();
+    void ReFreshResultWidget();
 private slots:
     void openFilesBtnPress();
     void upImagePosition();

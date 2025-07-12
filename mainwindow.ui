@@ -14,7 +14,7 @@
    <string>ImageSplicing</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,40">
+   <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,2,20">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="10,1">
       <item>
@@ -140,7 +140,7 @@
      <x>0</x>
      <y>0</y>
      <width>1366</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
