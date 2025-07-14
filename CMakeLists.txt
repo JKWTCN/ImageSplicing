@@ -22,6 +22,7 @@ message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 add_executable(ImageSplicing
+    WIN32
     main.cpp
     tools.hpp
     mainwindow.cpp

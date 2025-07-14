@@ -46,29 +46,29 @@ void MainWindow::UpdateQListWidget()
         QListWidgetItem *imageItem = new QListWidgetItem;
         imageItem->setIcon(QIcon(filePaths[i]));
         imageItem->setText(QString::fromStdString(GetFileName(filePaths[i].toStdString())));
-//        imageItem->setSizeHint(QSize(120, 100));
+        //        imageItem->setSizeHint(QSize(120, 100));
         ui->listImageFilesWidget->addItem(imageItem);
     }
 }
 //刷新拼接图片
 void MainWindow::ReFreshResultWidget(){
-        switch (splicingState)
-        {
-        case SS_VERTICAL:
-            MainWindow::on_pushButton_verticalSplicing_clicked();
-            break;
-        case SS_HORIZONTAL:
-            MainWindow::on_pushButton_horizontalSplicing_clicked();
-            break;
-        case SS_AUTO_HORIZONTAL:
-            MainWindow::on_pushButton_auto_clicked();
-            break;
-        case SS_AUTO_VERTICAL:
-            MainWindow::on_pushButton_auto_clicked();
-            break;
-        case SS_NONE:
-            break;
-        }
+    switch (splicingState)
+    {
+    case SS_VERTICAL:
+        MainWindow::on_pushButton_verticalSplicing_clicked();
+        break;
+    case SS_HORIZONTAL:
+        MainWindow::on_pushButton_horizontalSplicing_clicked();
+        break;
+    case SS_AUTO_HORIZONTAL:
+        MainWindow::on_pushButton_auto_clicked();
+        break;
+    case SS_AUTO_VERTICAL:
+        MainWindow::on_pushButton_auto_clicked();
+        break;
+    case SS_NONE:
+        break;
+    }
 }
 
 // 打开文件按钮事件
@@ -85,6 +85,11 @@ void MainWindow::openFilesBtnPress()
     ui->pushButton_auto->setEnabled(false);
 
     filePaths = OpenImagePaths();
+    if (filePaths.length() == 0)
+    {
+        //            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
+        return;
+    }
     if (GetOpenReverseConfig())
     {
         QStringList tmp = filePaths;
@@ -162,6 +167,8 @@ void MainWindow::UnlockPostionButton()
     ui->pushButton_5->setEnabled(true);
     ui->pushButton_6->setEnabled(true);
     ui->pushButton_7->setEnabled(true);
+    ui->pushButton_LayerUp->setEnabled(true);
+    ui->pushButton_LayerDown->setEnabled(true);
 }
 
 // 锁定图片位置调整按钮
@@ -170,6 +177,8 @@ void MainWindow::LockPostionButton()
     ui->pushButton_5->setEnabled(false);
     ui->pushButton_6->setEnabled(false);
     ui->pushButton_7->setEnabled(false);
+    ui->pushButton_LayerUp->setEnabled(false);
+    ui->pushButton_LayerDown->setEnabled(false);
 }
 // 横向拼接
 void MainWindow::on_pushButton_horizontalSplicing_clicked()
@@ -187,15 +196,15 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
                 filePaths[i] = tmp[tmp.length() - i - 1];
             }
         }
-        UnlockPostionButton();
         if (filePaths.length() == 0)
         {
-            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
+            //            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
             return;
         }
     }
+    UnlockPostionButton();
     splicingState = SS_HORIZONTAL;
-UpdateQListWidget();
+    UpdateQListWidget();
     // 加载所有图片
     for (const auto &path : filePaths)
     {
@@ -276,6 +285,14 @@ UpdateQListWidget();
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
+    if (!scene || scene->items().isEmpty()) return;
+    // 获取所有可见项目的边界矩形
+    QRectF boundingRect = scene->itemsBoundingRect();
+    // 调整场景大小
+    if (!boundingRect.isNull()) {
+        scene->setSceneRect(boundingRect);
+        ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
+    }
     ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
 }
 
@@ -296,13 +313,15 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
                 filePaths[i] = tmp[tmp.length() - i - 1];
             }
         }
-        UnlockPostionButton();
+
         if (filePaths.length() == 0)
         {
-            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
+            //            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
             return;
         }
+
     }
+    UnlockPostionButton();
     splicingState = SS_VERTICAL;
     UpdateQListWidget();
     // 加载所有图片
@@ -386,6 +405,14 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
+    if (!scene || scene->items().isEmpty()) return;
+    // 获取所有可见项目的边界矩形
+    QRectF boundingRect = scene->itemsBoundingRect();
+    // 调整场景大小
+    if (!boundingRect.isNull()) {
+        scene->setSceneRect(boundingRect);
+        ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
+    }
     ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
 }
 // 自动调整图像
@@ -476,6 +503,15 @@ void MainWindow::on_pushButton_save_clicked()
     QString lastDir = settings.value("LastOpenDirectory", "ImageSplicing_" + QDir::homePath()).toString();
     QGraphicsScene *scene = ui->graphicsView_result->scene();
     scene->clearSelection();
+    if (!scene || scene->items().isEmpty()) return;
+    // 获取所有可见项目的边界矩形
+    QRectF boundingRect = scene->itemsBoundingRect();
+    // 调整场景大小
+    if (!boundingRect.isNull()) {
+        scene->setSceneRect(boundingRect);
+        ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
+    }
+
     switch (GetSaveTypeConfig())
     {
     case ST_PNG:
@@ -510,7 +546,7 @@ void MainWindow::on_pushButton_save_clicked()
     }
     filePaths.clear();
     images.clear();
-
+    ClearResult();
     LockPostionButton();
     ui->pushButton_auto->setEnabled(false);
     ui->pushButton_save->setEnabled(false);
@@ -530,5 +566,25 @@ void MainWindow::ClearResult()
     if (scene)
     {
         scene->clear();
+    }
+}
+
+void MainWindow::on_pushButton_LayerUp_clicked()
+{
+    QGraphicsScene *scene = ui->graphicsView_result->scene();
+    if (!scene) return;
+    QList<QGraphicsItem*> selectedItems = scene->selectedItems();
+    foreach (QGraphicsItem *item, selectedItems) {
+        item->setZValue(item->zValue()+1);
+    }
+}
+
+void MainWindow::on_pushButton_LayerDown_clicked()
+{
+    QGraphicsScene *scene = ui->graphicsView_result->scene();
+    if (!scene) return;
+    QList<QGraphicsItem*> selectedItems = scene->selectedItems();
+    foreach (QGraphicsItem *item, selectedItems) {
+        item->setZValue(item->zValue()-1);
     }
 }

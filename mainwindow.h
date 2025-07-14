@@ -42,6 +42,10 @@ private slots:
     void on_pushButton_save_clicked();
     void on_pushButton_auto_clicked();
 
+    void on_pushButton_LayerUp_clicked();
+
+    void on_pushButton_LayerDown_clicked();
+
 protected:
     void wheelEvent(QWheelEvent *event) override; // 重写滚轮事件
 };
