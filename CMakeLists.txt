@@ -39,6 +39,10 @@ add_executable(ImageSplicing
     VerticalMovablePixmapItem.cpp
     HorizontalMovablePixmapItem.h
     HorizontalMovablePixmapItem.cpp
+    editpage.h
+    editpage.cpp
+    editpage.ui
+    VerticalMovabliPixmapItemManager.hpp
     ${TS_FILES}
 )
 

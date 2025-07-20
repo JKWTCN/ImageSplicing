@@ -2,19 +2,26 @@
 
 //绘制区域
 QRectF area;
-
+//上拼接线
+qreal lineTopY;
+//下拼接线
+qreal lineBottomY;
 HorizontalMovablePixmapItem::HorizontalMovablePixmapItem(const QPixmap &pixmap, QGraphicsItem *parent)
     : QGraphicsPixmapItem(pixmap, parent)
 {
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+    QRectF itemRect = this->boundingRect();
+    QPolygonF scenePolygon = this->mapToScene(itemRect);
+    lineTopY = scenePolygon.boundingRect().top();  // 上边
+    lineBottomY = scenePolygon.boundingRect().bottom();  // 下边
     //    QRectF rect = this->boundingRect();
     // 获取四个角的本地坐标
     //    QPointF topLeftLocal = rect.topLeft();
     //    QPointF topRightLocal = rect.topRight();
     //    QPointF bottomLeftLocal = rect.bottomLeft();
-    //    QPointF bottomRightLocal = rect.bottomRight();
+    //        QPointF bottomRightLocal = rect.bottomRight();
 
     // 转换为场景坐标
     //    QPointF topLeftScene = this->mapToScene(topLeftLocal);
@@ -40,7 +47,7 @@ QVariant HorizontalMovablePixmapItem::itemChange(GraphicsItemChange change, cons
 void HorizontalMovablePixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     painter->save();
-//    painter->setClipRect(area); // 只绘制指定区域
+    //    painter->setClipRect(area); // 只绘制指定区域
     QGraphicsPixmapItem::paint(painter, option, widget);
     painter->restore();
 }

@@ -149,6 +149,7 @@ void MainWindow::deleteImagePosition()
     int nowIndex = ui->listImageFilesWidget->currentRow();
     filePaths.removeAt(nowIndex);
     UpdateQListWidget();
+    ReFreshResultWidget();
 }
 // 打开设置界面
 void MainWindow::on_setting_action_triggered()
@@ -161,7 +162,7 @@ void MainWindow::on_setting_action_triggered()
     settingWindow->raise();
 }
 
-// 解锁图片位置调整按钮
+// 解锁图片调整按钮
 void MainWindow::UnlockPostionButton()
 {
     ui->pushButton_5->setEnabled(true);
@@ -169,9 +170,13 @@ void MainWindow::UnlockPostionButton()
     ui->pushButton_7->setEnabled(true);
     ui->pushButton_LayerUp->setEnabled(true);
     ui->pushButton_LayerDown->setEnabled(true);
+    ui->pushButton_copy->setEnabled(true);
+    ui->pushButton_add->setEnabled(true);
+    ui->pushButton_editResult->setEnabled(true);
+    ui->pushButton_editSelect->setEnabled(true);
 }
 
-// 锁定图片位置调整按钮
+// 锁定图片调整按钮
 void MainWindow::LockPostionButton()
 {
     ui->pushButton_5->setEnabled(false);
@@ -179,6 +184,10 @@ void MainWindow::LockPostionButton()
     ui->pushButton_7->setEnabled(false);
     ui->pushButton_LayerUp->setEnabled(false);
     ui->pushButton_LayerDown->setEnabled(false);
+    ui->pushButton_copy->setEnabled(false);
+    ui->pushButton_add->setEnabled(false);
+    ui->pushButton_editResult->setEnabled(false);
+    ui->pushButton_editSelect->setEnabled(false);
 }
 // 横向拼接
 void MainWindow::on_pushButton_horizontalSplicing_clicked()
@@ -587,4 +596,47 @@ void MainWindow::on_pushButton_LayerDown_clicked()
     foreach (QGraphicsItem *item, selectedItems) {
         item->setZValue(item->zValue()-1);
     }
+}
+//复制图片
+void MainWindow::on_pushButton_copy_clicked()
+{
+    ClearResult();
+    if (ui->listImageFilesWidget->selectedItems().isEmpty())
+        return;
+    int nowIndex = ui->listImageFilesWidget->currentRow();
+    filePaths.append(filePaths[nowIndex]);
+    filePaths.move(filePaths.length()-1,nowIndex+1);
+    UpdateQListWidget();
+    ReFreshResultWidget();
+}
+//添加图片
+void MainWindow::on_pushButton_add_clicked()
+{
+    auto tmp_filePaths = OpenImagePaths();
+    if (tmp_filePaths.length() == 0)
+    {
+        //            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
+        return;
+    }
+    if (GetOpenReverseConfig())
+    {
+        QStringList tmp = tmp_filePaths;
+        for (int i = 0; i < tmp.length(); i++)
+        {
+            tmp_filePaths[i] = tmp[tmp.length() - i - 1];
+        }
+    }
+    filePaths.append(tmp_filePaths);
+    UpdateQListWidget();
+    ReFreshResultWidget();
+}
+
+void MainWindow::on_pushButton_editSelect_clicked()
+{
+    int nowIndex = ui->listImageFilesWidget->currentRow();
+}
+
+void MainWindow::on_pushButton_editResult_clicked()
+{
+    int nowIndex = ui->listImageFilesWidget->currentRow();
 }
