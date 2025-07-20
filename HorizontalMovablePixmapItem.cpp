@@ -2,20 +2,15 @@
 
 //绘制区域
 QRectF area;
-//上拼接线
-qreal lineTopY;
-//下拼接线
-qreal lineBottomY;
+
 HorizontalMovablePixmapItem::HorizontalMovablePixmapItem(const QPixmap &pixmap, QGraphicsItem *parent)
     : QGraphicsPixmapItem(pixmap, parent)
 {
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges);
-    QRectF itemRect = this->boundingRect();
-    QPolygonF scenePolygon = this->mapToScene(itemRect);
-    lineTopY = scenePolygon.boundingRect().top();  // 上边
-    lineBottomY = scenePolygon.boundingRect().bottom();  // 下边
+
+
     //    QRectF rect = this->boundingRect();
     // 获取四个角的本地坐标
     //    QPointF topLeftLocal = rect.topLeft();
