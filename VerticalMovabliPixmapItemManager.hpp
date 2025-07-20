@@ -25,8 +25,8 @@ public:
         foreach (VerticalMovablePixmapItem *item, items)
         {
             // 连接位置变化信号
-            connect(item, &QGraphicsPixmapItem::itemChange,
-                    this, &ItemManager::onItemMoved);
+//            connect(item, &QGraphicsPixmapItem::itemChange,
+//                    this, &ItemManager::onItemMoved);
         }
     }
 
@@ -35,8 +35,8 @@ public:
     {
         foreach (VerticalMovablePixmapItem *item, items)
         {
-            disconnect(item, &VerticalMovablePixmapItem::itemChange,
-                       this, &ItemManager::onItemMoved);
+//            disconnect(item, &VerticalMovablePixmapItem::itemChange,
+//                       this, &ItemManager::onItemMoved);
         }
     }
 
