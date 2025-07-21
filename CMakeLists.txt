@@ -39,6 +39,8 @@ add_executable(ImageSplicing
     VerticalMovablePixmapItem.cpp
     HorizontalMovablePixmapItem.h
     HorizontalMovablePixmapItem.cpp
+    SplicingLine.h
+    SplicingLine.cpp
     editpage.h
     editpage.cpp
     editpage.ui

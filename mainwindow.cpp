@@ -13,6 +13,7 @@
 #include <cstdio>
 #include "VerticalMovablePixmapItem.h"
 #include "HorizontalMovablePixmapItem.h"
+#include "SplicingLine.h"
 #include "config.hpp"
 using namespace std;
 
@@ -271,6 +272,9 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
     const int verticalSpacing = 0;   // 垂直居中位置
     const int horizontalSpacing = 0; // 图片间水平间距
 
+    // 存储图片项目，用于后续添加拼接线
+    QList<HorizontalMovablePixmapItem *> imageItems;
+
     // 将所有图像添加到场景中
     for (const auto &image : images)
     {
@@ -292,8 +296,33 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         item->setPos(xPos, verticalSpacing);
         item->setZValue(0);
 
+        // 添加到列表中
+        imageItems.append(item);
+
         // 更新下一个图片的X位置
         xPos += pixmap.width() + horizontalSpacing;
+    }
+
+    // 在相邻图片之间添加拼接线
+    for (int i = 0; i < imageItems.size() - 1; i++)
+    {
+        HorizontalMovablePixmapItem *currentItem = imageItems[i];
+        HorizontalMovablePixmapItem *nextItem = imageItems[i + 1];
+
+        // 计算拼接线位置（两个图片之间的边界）
+        qreal lineX = currentItem->pos().x() + currentItem->pixmap().width();
+        qreal lineY1 = qMin(currentItem->pos().y(), nextItem->pos().y()) - 30; // 向上扩展30像素
+        qreal lineY2 = qMax(currentItem->pos().y() + currentItem->pixmap().height(),
+                            nextItem->pos().y() + nextItem->pixmap().height()) +
+                       30; // 向下扩展30像素
+
+        // 创建垂直拼接线
+        SplicingLine *splicingLine = new SplicingLine(lineX, lineY1, lineX, lineY2,
+                                                      SplicingLineOrientation::Vertical);
+        splicingLine->setExtensionLength(30);
+        splicingLine->setLineWidth(2.0, 8.0);
+        splicingLine->setZValue(1); // 确保拼接线在图片之上
+        scene->addItem(splicingLine);
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
@@ -394,6 +423,9 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     const int horizontalSpacing = 0; // 水平居中位置
     const int verticalSpacing = 0;   // 图片间垂直间距
 
+    // 存储图片项目，用于后续添加拼接线
+    QList<VerticalMovablePixmapItem *> imageItems;
+
     // 将所有图像添加到场景中
     for (const auto &image : images)
     {
@@ -413,9 +445,35 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
 
         // 设置初始位置（水平居中，垂直按顺序排列）
         item->setPos(horizontalSpacing, yPos);
+        item->setZValue(0);
+
+        // 添加到列表中
+        imageItems.append(item);
 
         // 更新下一个图片的Y位置
         yPos += pixmap.height() + verticalSpacing;
+    }
+
+    // 在相邻图片之间添加拼接线
+    for (int i = 0; i < imageItems.size() - 1; i++)
+    {
+        VerticalMovablePixmapItem *currentItem = imageItems[i];
+        VerticalMovablePixmapItem *nextItem = imageItems[i + 1];
+
+        // 计算拼接线位置（两个图片之间的边界）
+        qreal lineY = currentItem->pos().y() + currentItem->pixmap().height();
+        qreal lineX1 = qMin(currentItem->pos().x(), nextItem->pos().x()) - 30; // 向左扩展30像素
+        qreal lineX2 = qMax(currentItem->pos().x() + currentItem->pixmap().width(),
+                            nextItem->pos().x() + nextItem->pixmap().width()) +
+                       30; // 向右扩展30像素
+
+        // 创建水平拼接线
+        SplicingLine *splicingLine = new SplicingLine(lineX1, lineY, lineX2, lineY,
+                                                      SplicingLineOrientation::Horizontal);
+        splicingLine->setExtensionLength(30);
+        splicingLine->setLineWidth(2.0, 8.0);
+        splicingLine->setZValue(1); // 确保拼接线在图片之上
+        scene->addItem(splicingLine);
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
