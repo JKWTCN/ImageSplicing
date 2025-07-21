@@ -6,6 +6,7 @@
 #include <Commdlg.h>
 #include <QFileDialog>
 #include <QStringList>
+#include <QGraphicsSceneWheelEvent>
 #include <opencv2/calib3d.hpp>
 #include <settingwindow.h>
 #include <ctime>
@@ -36,7 +37,7 @@ void MainWindow::UpdateQListWidget()
 {
     ui->listImageFilesWidget->clear();
     ui->listImageFilesWidget->setViewMode(QListWidget::IconMode);
-    //ui->listImageFilesWidget->setIconSize(QSize(100, 100));//设置图片大小
+    // ui->listImageFilesWidget->setIconSize(QSize(100, 100));//设置图片大小
     ui->listImageFilesWidget->setSpacing(10);                   // 间距
     ui->listImageFilesWidget->setResizeMode(QListView::Adjust); // 适应布局调整
     ui->listImageFilesWidget->setMovement(QListView::Static);   // 不能移动
@@ -50,8 +51,9 @@ void MainWindow::UpdateQListWidget()
         ui->listImageFilesWidget->addItem(imageItem);
     }
 }
-//刷新拼接图片
-void MainWindow::ReFreshResultWidget(){
+// 刷新拼接图片
+void MainWindow::ReFreshResultWidget()
+{
     switch (splicingState)
     {
     case SS_VERTICAL:
@@ -82,6 +84,7 @@ void MainWindow::openFilesBtnPress()
 
     QGraphicsScene *scene = new QGraphicsScene;
     ui->graphicsView_result->setScene(scene);
+    scene->installEventFilter(this);
     ui->pushButton_auto->setEnabled(false);
 
     filePaths = OpenImagePaths();
@@ -102,7 +105,7 @@ void MainWindow::openFilesBtnPress()
     UnlockPostionButton();
     UpdateQListWidget();
 }
-//图片排序 上
+// 图片排序 上
 void MainWindow::upImagePosition()
 {
     ClearResult();
@@ -121,7 +124,7 @@ void MainWindow::upImagePosition()
         ui->listImageFilesWidget->setCurrentRow(filePaths.length() - 1);
     ui->listImageFilesWidget->setFocus();
 }
-//图片排序 下
+// 图片排序 下
 void MainWindow::downImagePosition()
 {
     ClearResult();
@@ -294,15 +297,18 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
-    if (!scene || scene->items().isEmpty()) return;
+    if (!scene || scene->items().isEmpty())
+        return;
     // 获取所有可见项目的边界矩形
     QRectF boundingRect = scene->itemsBoundingRect();
     // 调整场景大小
-    if (!boundingRect.isNull()) {
+    if (!boundingRect.isNull())
+    {
         scene->setSceneRect(boundingRect);
         ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
     }
     ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
+    scene->installEventFilter(this);
 }
 
 // 纵向拼接
@@ -328,7 +334,6 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
             //            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
             return;
         }
-
     }
     UnlockPostionButton();
     splicingState = SS_VERTICAL;
@@ -414,15 +419,18 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
-    if (!scene || scene->items().isEmpty()) return;
+    if (!scene || scene->items().isEmpty())
+        return;
     // 获取所有可见项目的边界矩形
     QRectF boundingRect = scene->itemsBoundingRect();
     // 调整场景大小
-    if (!boundingRect.isNull()) {
+    if (!boundingRect.isNull())
+    {
         scene->setSceneRect(boundingRect);
         ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
     }
     ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
+    scene->installEventFilter(this);
 }
 // 自动调整图像
 void MainWindow::on_pushButton_auto_clicked()
@@ -468,6 +476,7 @@ void MainWindow::on_pushButton_auto_clicked()
         QGraphicsScene *scene = new QGraphicsScene;
         scene->addPixmap(pixmap); // 传入转换后的 pixmap
         ui->graphicsView_result->setScene(scene);
+        scene->installEventFilter(this);
         ui->pushButton_auto->setEnabled(true);
         ui->pushButton_save->setEnabled(true);
     }
@@ -477,33 +486,59 @@ void MainWindow::on_pushButton_auto_clicked()
         showErrorMessageBox("错误", e.what());
     }
 }
+// 事件过滤器
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::GraphicsSceneWheel)
+    {
+        ui->graphicsView_result->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+        double scaleFactor = 1.15;
+        bool ok = QApplication::keyboardModifiers() & Qt::ControlModifier;
+        if (ok)
+        {
+            QGraphicsSceneWheelEvent *scrollevent = static_cast<QGraphicsSceneWheelEvent *>(event);
+            if (scrollevent->delta() > 0)
+            {
+                ui->graphicsView_result->scale(scaleFactor, scaleFactor);
+            }
+            else
+            {
+                ui->graphicsView_result->scale(1 / scaleFactor, 1 / scaleFactor);
+            }
+        }
+
+        event->accept();
+        return true;
+    }
+    return false;
+}
 // 重写滚轮事件处理函数
 // 该函数用于处理滚轮事件，实现缩放功能
-void MainWindow::wheelEvent(QWheelEvent *event)
-{
-    // 检查是否按下 Ctrl 键
-    if (QApplication::keyboardModifiers() & Qt::ControlModifier)
-    {
-        // 获取滚轮滚动角度（通常 1 步 = 120 度）
-        int delta = event->angleDelta().y();
+// void MainWindow::wheelEvent(QWheelEvent *event)
+// {
+//     // 检查是否按下 Ctrl 键
+//     if (QApplication::keyboardModifiers() & Qt::ControlModifier)
+//     {
+//         // 获取滚轮滚动角度（通常 1 步 = 120 度）
+//         int delta = event->angleDelta().y();
 
-        if (delta > 0)
-        {
-            ui->graphicsView_result->scale(1.1, 1.1); // 放大10%
-        }
-        else if (delta < 0)
-        {
-            ui->graphicsView_result->scale(0.9, 0.9); // 缩小10%
-        }
+//         if (delta > 0)
+//         {
+//             ui->graphicsView_result->scale(1.1, 1.1); // 放大10%
+//         }
+//         else if (delta < 0)
+//         {
+//             ui->graphicsView_result->scale(0.9, 0.9); // 缩小10%
+//         }
 
-        event->accept(); // 表示事件已处理
-    }
-    else
-    {
-        // 其他情况（如普通滚轮滚动）交给父类处理
-        QWidget::wheelEvent(event);
-    }
-}
+//         event->accept(); // 表示事件已处理
+//     }
+//     else
+//     {
+//         // 其他情况（如普通滚轮滚动）交给父类处理
+//         QWidget::wheelEvent(event);
+//     }
+// }
 // 保存图像
 void MainWindow::on_pushButton_save_clicked()
 {
@@ -512,11 +547,13 @@ void MainWindow::on_pushButton_save_clicked()
     QString lastDir = settings.value("LastOpenDirectory", "ImageSplicing_" + QDir::homePath()).toString();
     QGraphicsScene *scene = ui->graphicsView_result->scene();
     scene->clearSelection();
-    if (!scene || scene->items().isEmpty()) return;
+    if (!scene || scene->items().isEmpty())
+        return;
     // 获取所有可见项目的边界矩形
     QRectF boundingRect = scene->itemsBoundingRect();
     // 调整场景大小
-    if (!boundingRect.isNull()) {
+    if (!boundingRect.isNull())
+    {
         scene->setSceneRect(boundingRect);
         ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
     }
@@ -581,23 +618,27 @@ void MainWindow::ClearResult()
 void MainWindow::on_pushButton_LayerUp_clicked()
 {
     QGraphicsScene *scene = ui->graphicsView_result->scene();
-    if (!scene) return;
-    QList<QGraphicsItem*> selectedItems = scene->selectedItems();
-    foreach (QGraphicsItem *item, selectedItems) {
-        item->setZValue(item->zValue()+1);
+    if (!scene)
+        return;
+    QList<QGraphicsItem *> selectedItems = scene->selectedItems();
+    foreach (QGraphicsItem *item, selectedItems)
+    {
+        item->setZValue(item->zValue() + 1);
     }
 }
 
 void MainWindow::on_pushButton_LayerDown_clicked()
 {
     QGraphicsScene *scene = ui->graphicsView_result->scene();
-    if (!scene) return;
-    QList<QGraphicsItem*> selectedItems = scene->selectedItems();
-    foreach (QGraphicsItem *item, selectedItems) {
-        item->setZValue(item->zValue()-1);
+    if (!scene)
+        return;
+    QList<QGraphicsItem *> selectedItems = scene->selectedItems();
+    foreach (QGraphicsItem *item, selectedItems)
+    {
+        item->setZValue(item->zValue() - 1);
     }
 }
-//复制图片
+// 复制图片
 void MainWindow::on_pushButton_copy_clicked()
 {
     ClearResult();
@@ -605,11 +646,11 @@ void MainWindow::on_pushButton_copy_clicked()
         return;
     int nowIndex = ui->listImageFilesWidget->currentRow();
     filePaths.append(filePaths[nowIndex]);
-    filePaths.move(filePaths.length()-1,nowIndex+1);
+    filePaths.move(filePaths.length() - 1, nowIndex + 1);
     UpdateQListWidget();
     ReFreshResultWidget();
 }
-//添加图片
+// 添加图片
 void MainWindow::on_pushButton_add_clicked()
 {
     auto tmp_filePaths = OpenImagePaths();

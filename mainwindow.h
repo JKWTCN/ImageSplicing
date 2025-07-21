@@ -53,8 +53,8 @@ private slots:
     void on_pushButton_editSelect_clicked();
 
     void on_pushButton_editResult_clicked();
-
+    bool eventFilter(QObject *obj, QEvent *event); // 事件过滤器
 protected:
-    void wheelEvent(QWheelEvent *event) override; // 重写滚轮事件
+    // void wheelEvent(QWheelEvent *event) override; // 重写滚轮事件
 };
 #endif // MAINWINDOW_H
