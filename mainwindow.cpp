@@ -323,6 +323,10 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         splicingLine->setLineWidth(2.0, 8.0);
         splicingLine->setZValue(1); // 确保拼接线在图片之上
         scene->addItem(splicingLine);
+
+        // 设置图片项和拼接线的关联关系
+        currentItem->setRightSplicingLine(splicingLine); // 当前图片的右拼接线
+        nextItem->setLeftSplicingLine(splicingLine);     // 下一个图片的左拼接线
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
@@ -474,6 +478,10 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         splicingLine->setLineWidth(2.0, 8.0);
         splicingLine->setZValue(1); // 确保拼接线在图片之上
         scene->addItem(splicingLine);
+
+        // 设置图片项和拼接线的关联关系
+        currentItem->setBottomSplicingLine(splicingLine); // 当前图片的下拼接线
+        nextItem->setTopSplicingLine(splicingLine);       // 下一个图片的上拼接线
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);

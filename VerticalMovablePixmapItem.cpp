@@ -1,19 +1,13 @@
 #include "VerticalMovablePixmapItem.h"
+#include "SplicingLine.h"
 #include <QDebug>
-// 上拼接线
-qreal lineTopY;
-// 下拼接线
-qreal lineBottomY;
+
 VerticalMovablePixmapItem::VerticalMovablePixmapItem(const QPixmap &pixmap, QGraphicsItem *parent)
     : QGraphicsPixmapItem(pixmap, parent)
 {
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges);
-    QRectF itemRect = this->boundingRect();
-    QPolygonF scenePolygon = this->mapToScene(itemRect);
-    lineTopY = scenePolygon.boundingRect().top();       // 上边
-    lineBottomY = scenePolygon.boundingRect().bottom(); // 下边
 }
 
 QVariant VerticalMovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -22,24 +16,26 @@ QVariant VerticalMovablePixmapItem::itemChange(GraphicsItemChange change, const 
     {
         // 只允许垂直移动，保持X坐标不变
         QPointF newPos = value.toPointF();
-        // 上移，下边界线跟随
-        if (newPos.y() < pos().y())
+        QPointF oldPos = pos();
+        qreal deltaY = newPos.y() - oldPos.y();
+
+        // 上移，更新下方拼接线位置
+        if (deltaY < 0 && bottomSplicingLine)
         {
-            qDebug() << "上移前" << lineTopY << lineBottomY;
-            lineBottomY -= pos().y() - newPos.y();
-            qDebug() << "上移后" << lineTopY << lineBottomY;
+            QLineF currentLine = bottomSplicingLine->line();
+            bottomSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
+                                        currentLine.x2(), currentLine.y2() + deltaY);
         }
-        // 下移，上边界线跟随
-        else if (newPos.y() > pos().y())
+        // 下移，更新上方拼接线位置
+        else if (deltaY > 0 && topSplicingLine)
         {
-            qDebug() << "下移前" << lineTopY << lineBottomY;
-            lineTopY += newPos.y() - pos().y();
-            qDebug() << "下移后" << lineTopY << lineBottomY;
+            QLineF currentLine = topSplicingLine->line();
+            topSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
+                                     currentLine.x2(), currentLine.y2() + deltaY);
         }
+
         newPos.setX(pos().x()); // 保持原始X坐标不变
-
         update();
-
         return newPos;
     }
     return QGraphicsPixmapItem::itemChange(change, value);
@@ -47,11 +43,33 @@ QVariant VerticalMovablePixmapItem::itemChange(GraphicsItemChange change, const 
 void VerticalMovablePixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     painter->save();
-    // painter->setClipRect(area); // 只绘制指定区域
-    // painter->setPen(QPen(Qt::blue, 1));
-    // painter->drawLine(QPointF(-1000, lineTopY), QPointF(1000, lineTopY)); // 绘制上拼接线
-    // painter->setPen(QPen(Qt::red, 1));
-    // painter->drawLine(QPointF(-1000, lineBottomY), QPointF(1000, lineBottomY)); // 绘制下拼接线
+
+    // 计算裁剪区域：只显示拼接线之间的部分
+    QRectF itemRect = this->boundingRect();
+    QPointF itemPos = this->pos();
+
+    // 创建裁剪矩形
+    QRectF clipRect = itemRect;
+
+    // 如果有上方拼接线，限制顶部边界
+    if (topSplicingLine)
+    {
+        qreal lineY = topSplicingLine->line().y1();
+        qreal localTopY = lineY - itemPos.y();
+        clipRect.setTop(qMax(itemRect.top(), localTopY));
+    }
+
+    // 如果有下方拼接线，限制底部边界
+    if (bottomSplicingLine)
+    {
+        qreal lineY = bottomSplicingLine->line().y1();
+        qreal localBottomY = lineY - itemPos.y();
+        clipRect.setBottom(qMin(itemRect.bottom(), localBottomY));
+    }
+
+    // 应用裁剪
+    painter->setClipRect(clipRect);
+
     QGraphicsPixmapItem::paint(painter, option, widget);
     painter->restore();
 }
