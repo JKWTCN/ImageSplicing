@@ -604,6 +604,14 @@ void MainWindow::on_pushButton_save_clicked()
     QSettings settings("iCloudWar", "ImageSplicing");
     QString lastDir = settings.value("LastOpenDirectory", "ImageSplicing_" + QDir::homePath()).toString();
     QGraphicsScene *scene = ui->graphicsView_result->scene();
+    for (auto &item : scene->items())
+    {
+        if (item->type() == SplicingLine::Type)
+        {
+            SplicingLine *splicingLine = static_cast<SplicingLine *>(item);
+            splicingLine->setVisible(false); // 隐藏拼接线
+        }
+    }
     scene->clearSelection();
     if (!scene || scene->items().isEmpty())
         return;
@@ -615,18 +623,23 @@ void MainWindow::on_pushButton_save_clicked()
         scene->setSceneRect(boundingRect);
         ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
     }
-
+    bool isSaved = false;
     switch (GetSaveTypeConfig())
     {
     case ST_PNG:
-        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
+        isSaved = saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
         break;
     case ST_JPG:
-        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".jpg", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
+        isSaved = saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".jpg", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
         break;
     default:
-        saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
+        isSaved = saveGraphicsViewToImage(ui->graphicsView_result, "ImageSplicing_" + QString::number(now) + ".png", PaddingColorType2QtColor(GetPaddingColorTypeConfig()));
         break;
+    }
+    if (!isSaved)
+    {
+        showErrorMessageBox("错误", "未保存图片");
+        return;
     }
     if (GetFinishRAWPhictureConfig())
     {
