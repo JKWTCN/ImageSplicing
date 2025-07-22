@@ -6,7 +6,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
-
+#include "MovablePixmapItem.h"
 enum class SplicingLineOrientation
 {
     Horizontal,
@@ -31,6 +31,12 @@ public:
     // 设置线条粗细
     void setLineWidth(qreal normalWidth, qreal extensionWidth);
 
+    // 获取和设置拼接线两端图片
+    MovablePixmapItem *getLastItem()  { return lastItem; }
+    MovablePixmapItem *getNextItem()  { return nextItem; }
+    void setLastItem(MovablePixmapItem *item);
+    void setNextItem(MovablePixmapItem *item);
+
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
@@ -39,7 +45,6 @@ protected:
 
 private:
     void updatePen();
-
     SplicingLineOrientation m_orientation;
     bool m_highlighted;
     qreal m_extensionLength;
@@ -49,6 +54,9 @@ private:
     QColor m_normalColor;
     QColor m_highlightColor;
     QColor m_extensionColor;
+    // 拼接线对应的两端图片
+    MovablePixmapItem *lastItem;
+    MovablePixmapItem *nextItem;
 };
 
 #endif // SPLICINGLINE_H

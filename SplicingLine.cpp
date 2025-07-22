@@ -22,6 +22,8 @@ void SplicingLine::setHighlighted(bool highlighted)
 {
     if (m_highlighted != highlighted)
     {
+        lastItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
+        nextItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
         m_highlighted = highlighted;
         updatePen();
         update();
@@ -51,6 +53,16 @@ void SplicingLine::updatePen()
     }
     newPen.setCapStyle(Qt::RoundCap);
     setPen(newPen);
+}
+
+void SplicingLine::setLastItem(MovablePixmapItem *item)
+{
+    lastItem = item;
+}
+
+void SplicingLine::setNextItem(MovablePixmapItem *item)
+{
+    nextItem = item;
 }
 
 void SplicingLine::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

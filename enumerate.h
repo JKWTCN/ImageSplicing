@@ -4,6 +4,12 @@
 #include <string>
 #include <map>
 
+//图片拼接移动模式
+enum Move_Type
+{
+    MV_V,
+    MV_H
+};
 // 图像保存格式
 enum SaveType
 {
