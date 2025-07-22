@@ -4,7 +4,7 @@
 MovablePixmapItem::MovablePixmapItem(const QPixmap &pixmap, Move_Type moveType, QGraphicsItem *parent)
     : QGraphicsPixmapItem(pixmap, parent)
 {
-    setFlag(QGraphicsItem::ItemIsMovable,false);
+    setFlag(QGraphicsItem::ItemIsMovable, false);
 
     setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -13,27 +13,27 @@ MovablePixmapItem::MovablePixmapItem(const QPixmap &pixmap, Move_Type moveType, 
 
 QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-    if (change == ItemPositionChange && scene() &&getMoveType() == MV_V)
+    if (change == ItemPositionChange && scene() && getMoveType() == MV_V)
     {
         // 只允许垂直移动，保持X坐标不变
         QPointF newPos = value.toPointF();
         QPointF oldPos = pos();
         qreal deltaY = newPos.y() - oldPos.y();
 
-        // 上移，更新下方拼接线位置
-        if (deltaY < 0 && bottomSplicingLine)
-        {
-            QLineF currentLine = bottomSplicingLine->line();
-            bottomSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
-                                        currentLine.x2(), currentLine.y2() + deltaY);
-        }
-        // 下移，更新上方拼接线位置
-        else if (deltaY > 0 && topSplicingLine)
-        {
-            QLineF currentLine = topSplicingLine->line();
-            topSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
-                                     currentLine.x2(), currentLine.y2() + deltaY);
-        }
+        // // 上移，更新下方拼接线位置
+        // if (deltaY < 0 && bottomSplicingLine)
+        // {
+        //     QLineF currentLine = bottomSplicingLine->line();
+        //     bottomSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
+        //                                 currentLine.x2(), currentLine.y2() + deltaY);
+        // }
+        // // 下移，更新上方拼接线位置
+        // else if (deltaY > 0 && topSplicingLine)
+        // {
+        //     QLineF currentLine = topSplicingLine->line();
+        //     topSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
+        //                              currentLine.x2(), currentLine.y2() + deltaY);
+        // }
 
         newPos.setX(pos().x()); // 保持原始X坐标不变
         update();
@@ -46,20 +46,20 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         QPointF oldPos = pos();
         qreal deltaX = newPos.x() - oldPos.x();
 
-        // 左移，更新右侧拼接线位置
-        if (deltaX < 0 && rightSplicingLine)
-        {
-            QLineF currentLine = rightSplicingLine->line();
-            rightSplicingLine->setLine(currentLine.x1() + deltaX, currentLine.y1(),
-                                       currentLine.x2() + deltaX, currentLine.y2());
-        }
-        // 右移，更新左侧拼接线位置
-        else if (deltaX > 0 && leftSplicingLine)
-        {
-            QLineF currentLine = leftSplicingLine->line();
-            leftSplicingLine->setLine(currentLine.x1() + deltaX, currentLine.y1(),
-                                      currentLine.x2() + deltaX, currentLine.y2());
-        }
+        // // 左移，更新右侧拼接线位置
+        // if (deltaX < 0 && rightSplicingLine)
+        // {
+        //     QLineF currentLine = rightSplicingLine->line();
+        //     rightSplicingLine->setLine(currentLine.x1() + deltaX, currentLine.y1(),
+        //                                currentLine.x2() + deltaX, currentLine.y2());
+        // }
+        // // 右移，更新左侧拼接线位置
+        // else if (deltaX > 0 && leftSplicingLine)
+        // {
+        //     QLineF currentLine = leftSplicingLine->line();
+        //     leftSplicingLine->setLine(currentLine.x1() + deltaX, currentLine.y1(),
+        //                               currentLine.x2() + deltaX, currentLine.y2());
+        // }
 
         newPos.setY(pos().y()); // 保持原始Y坐标不变
         return newPos;
