@@ -124,7 +124,7 @@ void SplicingLine::mousePressEvent(QGraphicsSceneMouseEvent *event)
     if (event->button() == Qt::LeftButton)
     {
         setHighlighted(!m_highlighted);
-        qDebug() << "拼接线被点击，当前状态：" << (m_highlighted ? "高亮" : "普通");
+        qDebug() << "拼接线被点击，当前状态：" << (m_highlighted ? "高亮" : "普通") << endl;
     }
     QGraphicsLineItem::mousePressEvent(event);
 }

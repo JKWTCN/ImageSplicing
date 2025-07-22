@@ -18,10 +18,14 @@ public:
     void setLeftSplicingLine(SplicingLine *line) { leftSplicingLine = line; }
     void setRightSplicingLine(SplicingLine *line) { rightSplicingLine = line; }
     Move_Type getMoveType() { return this->moveType; }
+    // 设置最初位置
+    void setInitialPos(const QPointF &pos) { initialPos = pos; }
+
+    // 获取最初位置
+    QPointF getInitialPos() const { return initialPos; }
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
@@ -30,5 +34,6 @@ private:
     SplicingLine *leftSplicingLine = nullptr;   // 左侧的拼接线
     SplicingLine *rightSplicingLine = nullptr;  // 右侧的拼接线
     Move_Type moveType;
+    QPointF initialPos;
 };
 #endif

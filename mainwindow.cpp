@@ -89,7 +89,7 @@ void MainWindow::openFilesBtnPress()
     filePaths = OpenImagePaths();
     if (filePaths.length() == 0)
     {
-        //showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
+        // showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
         return;
     }
     if (GetOpenReverseConfig())
@@ -287,9 +287,9 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         QPixmap pixmap = QPixmap::fromImage(qimg);
 
         // 创建自定义的可拖动项
-        MovablePixmapItem *item = new MovablePixmapItem(pixmap,MV_H);
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_H);
         scene->addItem(item);
-
+        item->setInitialPos(QPointF(xPos, verticalSpacing));
         // 设置初始位置（垂直居中，水平按顺序排列）
         item->setPos(xPos, verticalSpacing);
         item->setZValue(0);
@@ -325,6 +325,8 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         // 设置图片项和拼接线的关联关系
         currentItem->setRightSplicingLine(splicingLine); // 当前图片的右拼接线
         nextItem->setLeftSplicingLine(splicingLine);     // 下一个图片的左拼接线
+        splicingLine->setLastItem(currentItem);
+        splicingLine->setNextItem(nextItem);
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
@@ -442,9 +444,9 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         QPixmap pixmap = QPixmap::fromImage(qimg);
 
         // 创建自定义的可拖动项
-        MovablePixmapItem *item = new MovablePixmapItem(pixmap,MV_V);
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V);
         scene->addItem(item);
-
+        item->setInitialPos(QPointF(horizontalSpacing, yPos));
         // 设置初始位置（水平居中，垂直按顺序排列）
         item->setPos(horizontalSpacing, yPos);
         item->setZValue(0);
