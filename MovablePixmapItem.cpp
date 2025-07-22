@@ -1,5 +1,6 @@
 #include "MovablePixmapItem.h"
 #include "SplicingLine.h"
+#include <QGraphicsScene>
 
 MovablePixmapItem::MovablePixmapItem(const QPixmap &pixmap, Move_Type moveType, QGraphicsItem *parent)
     : QGraphicsPixmapItem(pixmap, parent)
@@ -20,20 +21,40 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         QPointF oldPos = pos();
         qreal deltaY = newPos.y() - oldPos.y();
 
-        // // 上移，更新下方拼接线位置
-        // if (deltaY < 0 && bottomSplicingLine)
-        // {
-        //     QLineF currentLine = bottomSplicingLine->line();
-        //     bottomSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
-        //                                 currentLine.x2(), currentLine.y2() + deltaY);
-        // }
-        // // 下移，更新上方拼接线位置
-        // else if (deltaY > 0 && topSplicingLine)
-        // {
-        //     QLineF currentLine = topSplicingLine->line();
-        //     topSplicingLine->setLine(currentLine.x1(), currentLine.y1() + deltaY,
-        //                              currentLine.x2(), currentLine.y2() + deltaY);
-        // }
+        // 上移，更新下方所有元素位置
+        if (deltaY < 0 && bottomSplicingLine)
+        {
+            QList<QGraphicsItem *> allItems = this->scene()->items();
+            int i = 0;
+            for (; i < allItems.length(); i++)
+                if (allItems[i] == this)
+                    break;
+            i++;
+            for (; i < allItems.length(); i++)
+            {
+                QPointF newPos = allItems[i]->pos();
+                QPointF oldPos = allItems[i]->pos();
+                newPos.setY(oldPos.y() - deltaY);
+                allItems[i]->setPos(newPos);
+            }
+        }
+        // 下移，更新上方所有元素位置
+        else if (deltaY > 0 && topSplicingLine)
+        {
+            QList<QGraphicsItem *> allItems = this->scene()->items();
+            int i = 0;
+            for (; i < allItems.length(); i++)
+                if (allItems[i] == this)
+                    break;
+            i++;
+            for (; i < allItems.length(); i++)
+            {
+                QPointF newPos = allItems[i]->pos();
+                QPointF oldPos = allItems[i]->pos();
+                newPos.setY(oldPos.y() + deltaY);
+                allItems[i]->setPos(newPos);
+            }
+        }
 
         newPos.setX(pos().x()); // 保持原始X坐标不变
         update();
