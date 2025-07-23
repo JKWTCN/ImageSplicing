@@ -50,17 +50,32 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             else if (topSplicingLine && bottomSplicingLine)
             {
                 qDebug() << "中间图片上移" << endl;
-
-                // 获取当前元素的底部Y坐标
-                qreal currentBottomY = sceneBoundingRect().bottom();
-
-                if (currentBottomY + deltaY <= topSplicingLine->line().y1())
+                if (topSplicingLine->isHighlighted())
                 {
-                    return oldPos;
-                }
+                    // 获取当前元素的底部Y坐标
+                    qreal currentBottomY = sceneBoundingRect().bottom();
 
-                // 移动当前元素下方的所有元素作为整体
-                moveElementsBelow(currentBottomY, deltaY);
+                    if (currentBottomY + deltaY <= topSplicingLine->line().y1())
+                    {
+                        return oldPos;
+                    }
+
+                    // 移动当前元素下方的所有元素作为整体
+                    moveElementsBelow(currentBottomY, deltaY);
+                }
+                else if (bottomSplicingLine->isHighlighted())
+                {
+                    // 获取当前元素的底部Y坐标
+                    qreal currentBottomY = sceneBoundingRect().bottom();
+
+                    if (currentBottomY + deltaY <= topSplicingLine->line().y1())
+                    {
+                        return oldPos;
+                    }
+
+                    // 移动当前元素下方的所有元素作为整体
+                    moveElementsBelow(currentBottomY, deltaY);
+                }
             }
         }
         // 下移，更新上方所有元素位置
@@ -89,21 +104,34 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             else if (topSplicingLine && bottomSplicingLine)
             {
                 qDebug() << "中间图片下移" << endl;
-
-                qreal currentTopY = sceneBoundingRect().top();
-                if (currentTopY + deltaY >= topSplicingLine->line().y1())
+                if (topSplicingLine->isHighlighted())
                 {
-                    return oldPos;
+                    qreal currentTopY = sceneBoundingRect().top();
+                    if (currentTopY + deltaY >= topSplicingLine->line().y1())
+                    {
+                        return oldPos;
+                    }
+
+                    // 获取当前元素的底部Y坐标
+                    qreal currentBottomY = sceneBoundingRect().bottom();
+
+                    // 移动当前元素下方的所有元素作为整体
+                    moveElementsBelow(currentBottomY, deltaY);
                 }
+                else if (bottomSplicingLine->isHighlighted())
+                {
+                    qreal currentTopY = sceneBoundingRect().top();
+                    if (currentTopY + deltaY >= topSplicingLine->line().y1())
+                    {
+                        return oldPos;
+                    }
 
-                // 获取当前元素的底部Y坐标
-                qreal currentBottomY = sceneBoundingRect().bottom();
+                    // 获取当前元素的底部Y坐标
+                    qreal currentBottomY = sceneBoundingRect().bottom();
 
-                // 移动当前元素下方的所有元素作为整体
-                moveElementsBelow(currentBottomY, deltaY);
-
-                
-
+                    // 移动当前元素下方的所有元素作为整体
+                    moveElementsBelow(currentBottomY, deltaY);
+                }
             }
         }
         return newPos;
