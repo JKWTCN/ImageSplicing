@@ -247,4 +247,61 @@ void MovablePixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 
     QGraphicsPixmapItem::paint(painter, option, widget);
     painter->restore();
+}
+
+QPainterPath MovablePixmapItem::shape() const
+{
+    QPainterPath path;
+
+    // 计算可点击区域：只有拼接线之间的部分
+    QRectF itemRect = this->boundingRect();
+    QRectF clickableRect = itemRect;
+
+    if (moveType == MV_V)
+    {
+        // 垂直移动模式：限制上下边界
+        if (topSplicingLine)
+        {
+            qreal lineY = topSplicingLine->line().y1();
+            qreal localTopY = lineY - this->pos().y();
+            clickableRect.setTop(qMax(itemRect.top(), localTopY));
+        }
+
+        if (bottomSplicingLine)
+        {
+            qreal lineY = bottomSplicingLine->line().y1();
+            qreal localBottomY = lineY - this->pos().y();
+            clickableRect.setBottom(qMin(itemRect.bottom(), localBottomY));
+        }
+    }
+    else if (moveType == MV_H)
+    {
+        // 水平移动模式：限制左右边界
+        if (leftSplicingLine)
+        {
+            qreal lineX = leftSplicingLine->line().x1();
+            qreal localLeftX = lineX - this->pos().x();
+            clickableRect.setLeft(qMax(itemRect.left(), localLeftX));
+        }
+
+        if (rightSplicingLine)
+        {
+            qreal lineX = rightSplicingLine->line().x1();
+            qreal localRightX = lineX - this->pos().x();
+            clickableRect.setRight(qMin(itemRect.right(), localRightX));
+        }
+    }
+
+    // 确保可点击区域有效
+    if (clickableRect.isValid() && !clickableRect.isEmpty())
+    {
+        path.addRect(clickableRect);
+    }
+    else
+    {
+        // 如果计算出的区域无效，返回空路径（不可点击）
+        return QPainterPath();
+    }
+
+    return path;
 };

@@ -27,6 +27,7 @@ public:
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    QPainterPath shape() const override;
 
 private:
     SplicingLine *topSplicingLine = nullptr;    // 上方的拼接线
