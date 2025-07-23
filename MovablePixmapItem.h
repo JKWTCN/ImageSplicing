@@ -30,6 +30,10 @@ protected:
     QPainterPath shape() const override;
 
 private:
+    // 移动当前元素下方的所有元素（作为整体移动）
+    void moveElementsBelow(qreal currentBottomY, qreal deltaY);
+    // 移动当前元素上方的所有元素（作为整体移动）
+    void moveElementsAbove(qreal currentTopY, qreal deltaY);
     SplicingLine *topSplicingLine = nullptr;    // 上方的拼接线
     SplicingLine *bottomSplicingLine = nullptr; // 下方的拼接线
     SplicingLine *leftSplicingLine = nullptr;   // 左侧的拼接线
