@@ -1,6 +1,7 @@
 #include "SplicingLine.h"
 #include <QGraphicsScene>
 #include <QDebug>
+#include <QtMath>
 
 SplicingLine::SplicingLine(qreal x1, qreal y1, qreal x2, qreal y2,
                            SplicingLineOrientation orientation,
@@ -33,7 +34,7 @@ void SplicingLine::setHighlighted(bool highlighted)
 void SplicingLine::setLineWidth(qreal normalWidth, qreal extensionWidth)
 {
     m_normalWidth = normalWidth;
-    m_extensionWidth = extensionWidth;
+    m_extensionWidth = extensionWidth * 5;
     updatePen();
     update();
 }
@@ -83,40 +84,39 @@ void SplicingLine::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
     extensionPen.setWidth(m_extensionWidth);
     extensionPen.setCapStyle(Qt::RoundCap);
 
-    if (m_orientation == SplicingLineOrientation::Horizontal)
+    // 绘制两端的圆形扩展
+    QPointF p1 = currentLine.p1();
+    QPointF p2 = currentLine.p2();
+
+    // 计算线条的方向向量
+    QPointF direction = p2 - p1;
+    qreal length = qSqrt(direction.x() * direction.x() + direction.y() * direction.y());
+    if (length > 0)
     {
-        // 水平拼接线，在两端垂直方向扩展
-        QPointF p1 = currentLine.p1();
-        QPointF p2 = currentLine.p2();
-
-        // 左端扩展
-        QLineF leftExtension(p1.x(), p1.y() - m_extensionLength,
-                             p1.x(), p1.y() + m_extensionLength);
-        painter->setPen(extensionPen);
-        painter->drawLine(leftExtension);
-
-        // 右端扩展
-        QLineF rightExtension(p2.x(), p2.y() - m_extensionLength,
-                              p2.x(), p2.y() + m_extensionLength);
-        painter->drawLine(rightExtension);
+        direction = direction / length; // 单位向量
     }
-    else
-    {
-        // 垂直拼接线，在两端水平方向扩展
-        QPointF p1 = currentLine.p1();
-        QPointF p2 = currentLine.p2();
 
-        // 上端扩展
-        QLineF topExtension(p1.x() - m_extensionLength, p1.y(),
-                            p1.x() + m_extensionLength, p1.y());
-        painter->setPen(extensionPen);
-        painter->drawLine(topExtension);
+    // 在线条两端延长 m_extensionLength 的距离放置圆形
+    QPointF extendedP1 = p1 - direction * m_extensionLength;
+    QPointF extendedP2 = p2 + direction * m_extensionLength;
 
-        // 下端扩展
-        QLineF bottomExtension(p2.x() - m_extensionLength, p2.y(),
-                               p2.x() + m_extensionLength, p2.y());
-        painter->drawLine(bottomExtension);
-    }
+    // 设置画刷填充圆形
+    QBrush extensionBrush(m_highlighted ? m_highlightColor : m_extensionColor);
+    painter->setBrush(extensionBrush);
+    painter->setPen(extensionPen);
+
+    // 圆形半径使用扩展宽度的一半
+    qreal circleRadius = m_extensionWidth / 2.0;
+
+    // 绘制第一个端点的圆形（在延长位置）
+    QRectF circle1(extendedP1.x() - circleRadius, extendedP1.y() - circleRadius,
+                   circleRadius * 2, circleRadius * 2);
+    painter->drawEllipse(circle1);
+
+    // 绘制第二个端点的圆形（在延长位置）
+    QRectF circle2(extendedP2.x() - circleRadius, extendedP2.y() - circleRadius,
+                   circleRadius * 2, circleRadius * 2);
+    painter->drawEllipse(circle2);
 }
 
 void SplicingLine::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -133,9 +133,10 @@ QRectF SplicingLine::boundingRect() const
 {
     QRectF rect = QGraphicsLineItem::boundingRect();
 
-    // 扩展边界矩形以包含超出部分
-    qreal extraWidth = m_extensionWidth / 2.0 + m_extensionLength;
-    rect.adjust(-extraWidth, -extraWidth, extraWidth, extraWidth);
+    // 扩展边界矩形以包含延长位置的圆形
+    qreal circleRadius = m_extensionWidth / 2.0;
+    qreal totalExtension = m_extensionLength + circleRadius;
+    rect.adjust(-totalExtension, -totalExtension, totalExtension, totalExtension);
 
     return rect;
 }
@@ -145,8 +146,8 @@ QPainterPath SplicingLine::shape() const
     QPainterPath path;
     QLineF currentLine = line();
 
-    // 创建一个包含主线条和扩展部分的形状
-    qreal halfWidth = qMax(m_normalWidth, m_extensionWidth) / 2.0;
+    // 创建一个包含主线条和圆形扩展部分的形状
+    qreal halfWidth = m_normalWidth / 2.0;
 
     if (m_orientation == SplicingLineOrientation::Horizontal)
     {
@@ -154,17 +155,6 @@ QPainterPath SplicingLine::shape() const
         QRectF mainRect(currentLine.p1().x(), currentLine.p1().y() - halfWidth,
                         currentLine.length(), m_normalWidth);
         path.addRect(mainRect);
-
-        // 添加扩展区域
-        QRectF leftExt(currentLine.p1().x() - m_extensionWidth / 2,
-                       currentLine.p1().y() - m_extensionLength,
-                       m_extensionWidth, m_extensionLength * 2);
-        path.addRect(leftExt);
-
-        QRectF rightExt(currentLine.p2().x() - m_extensionWidth / 2,
-                        currentLine.p2().y() - m_extensionLength,
-                        m_extensionWidth, m_extensionLength * 2);
-        path.addRect(rightExt);
     }
     else
     {
@@ -172,18 +162,35 @@ QPainterPath SplicingLine::shape() const
         QRectF mainRect(currentLine.p1().x() - halfWidth, currentLine.p1().y(),
                         m_normalWidth, currentLine.length());
         path.addRect(mainRect);
-
-        // 添加扩展区域
-        QRectF topExt(currentLine.p1().x() - m_extensionLength,
-                      currentLine.p1().y() - m_extensionWidth / 2,
-                      m_extensionLength * 2, m_extensionWidth);
-        path.addRect(topExt);
-
-        QRectF bottomExt(currentLine.p2().x() - m_extensionLength,
-                         currentLine.p2().y() - m_extensionWidth / 2,
-                         m_extensionLength * 2, m_extensionWidth);
-        path.addRect(bottomExt);
     }
+
+    // 添加两端的圆形区域（在延长位置）
+    QPointF p1 = currentLine.p1();
+    QPointF p2 = currentLine.p2();
+
+    // 计算线条的方向向量
+    QPointF direction = p2 - p1;
+    qreal length = qSqrt(direction.x() * direction.x() + direction.y() * direction.y());
+    if (length > 0)
+    {
+        direction = direction / length; // 单位向量
+    }
+
+    // 在线条两端延长 m_extensionLength 的距离放置圆形
+    QPointF extendedP1 = p1 - direction * m_extensionLength;
+    QPointF extendedP2 = p2 + direction * m_extensionLength;
+
+    qreal circleRadius = m_extensionWidth / 2.0;
+
+    // 第一个端点的圆形（在延长位置）
+    QRectF circle1(extendedP1.x() - circleRadius, extendedP1.y() - circleRadius,
+                   circleRadius * 2, circleRadius * 2);
+    path.addEllipse(circle1);
+
+    // 第二个端点的圆形（在延长位置）
+    QRectF circle2(extendedP2.x() - circleRadius, extendedP2.y() - circleRadius,
+                   circleRadius * 2, circleRadius * 2);
+    path.addEllipse(circle2);
 
     return path;
 }

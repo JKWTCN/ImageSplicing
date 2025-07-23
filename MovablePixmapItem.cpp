@@ -49,29 +49,21 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (topSplicingLine && bottomSplicingLine)
             {
-                //                qDebug() << "中间图片上移" << endl;
-                //                qreal lineTY = topSplicingLine->line().y1();
-                //                qreal lineBY = bottomSplicingLine->line().y1();
-                //                if (!(lineTY <= topY && topY <= lineBY))
-                //                {
-                //                    newPos.setY(oldPos.y());
-                //                    return newPos;
-                //                }
+                qDebug() << "中间图片上移" << endl;
+                QList<QGraphicsItem *> allItems = this->scene()->items();
+                int i = 0;
+                for (; i < allItems.length(); i++)
+                    if (allItems[i] == this)
+                        break;
+                i++;
+                for (; i < allItems.length(); i++)
+                {
+                    QPointF newPos = allItems[i]->pos();
+                    QPointF oldPos = allItems[i]->pos();
+                    newPos.setY(oldPos.y() + deltaY);
+                    allItems[i]->setPos(newPos);
+                }
             }
-
-            // QList<QGraphicsItem *> allItems = this->scene()->items();
-            // int i = 0;
-            // for (; i < allItems.length(); i++)
-            //     if (allItems[i] == this)
-            //         break;
-            // i++;-
-            // for (; i < allItems.length(); i++)
-            // {
-            //     QPointF newPos = allItems[i]->pos();
-            //     QPointF oldPos = allItems[i]->pos();
-            //     newPos.setY(oldPos.y() - deltaY);
-            //     allItems[i]->setPos(newPos);
-            // }
         }
         // 下移，更新上方所有元素位置
         else if (deltaY > 0)
@@ -98,29 +90,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (topSplicingLine && bottomSplicingLine)
             {
-                //                qDebug() << "中间图片下移" << endl;
-                //                qreal lineTY = topSplicingLine->line().y1();
-                //                qreal lineBY = bottomSplicingLine->line().y1();
-                //                if (!(lineTY <= topY && topY <= lineBY))
-                //                {
-                //                    newPos.setY(oldPos.y());
-                //                    return newPos;
-                //                }
             }
-
-            // QList<QGraphicsItem *> allItems = this->scene()->items();
-            // int i = 0;
-            // for (; i < allItems.length(); i++)
-            //     if (allItems[i] == this)
-            //         break;
-            // i++;
-            // for (; i < allItems.length(); i++)
-            // {
-            //     QPointF newPos = allItems[i]->pos();
-            //     QPointF oldPos = allItems[i]->pos();
-            //     newPos.setY(oldPos.y() + deltaY);
-            //     allItems[i]->setPos(newPos);
-            // }
         }
         return newPos;
     }
