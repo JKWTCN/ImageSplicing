@@ -50,6 +50,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             else if (topSplicingLine && bottomSplicingLine)
             {
                 qDebug() << "中间图片上移" << endl;
+                // 如果是该元素的上拼接线
                 if (topSplicingLine->isHighlighted())
                 {
                     // 获取当前元素的底部Y坐标
@@ -63,10 +64,16 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                     // 移动当前元素下方的所有元素作为整体
                     moveElementsBelow(currentBottomY, deltaY);
                 }
+                // 如果是该元素的下拼接线
                 else if (bottomSplicingLine->isHighlighted())
                 {
                     // 获取当前元素的底部Y坐标
                     qreal currentBottomY = sceneBoundingRect().bottom();
+                    // 如果下拼接线在当前元素底部之下
+                    if (bottomSplicingLine->line().y1() >= currentBottomY + deltaY)
+                    {
+                        return oldPos;
+                    }
 
                     if (currentBottomY + deltaY <= topSplicingLine->line().y1())
                     {
