@@ -27,6 +27,28 @@ void SplicingLine::setHighlighted(bool highlighted)
 {
     if (m_highlighted != highlighted)
     {
+        // 取消其他拼接线的高亮状态
+        QGraphicsScene *scene = this->scene();
+        if (scene)
+        {
+            for (QGraphicsItem *item : scene->items())
+            {
+                SplicingLine *line = qgraphicsitem_cast<SplicingLine *>(item);
+                if (line && line != this)
+                {
+                    line->setHighlighted(false);
+                    if (line->lastItem != nullptr)
+                    {
+                        line->lastItem->setFlag(QGraphicsItem::ItemIsMovable, false);
+                    }
+                    if (line->nextItem != nullptr)
+                    {
+                        line->nextItem->setFlag(QGraphicsItem::ItemIsMovable, false);
+                    }
+                }
+            }
+        }
+        m_highlighted = highlighted;
         if (lastItem != nullptr)
         {
             lastItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
@@ -35,7 +57,6 @@ void SplicingLine::setHighlighted(bool highlighted)
         {
             nextItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
         }
-        m_highlighted = highlighted;
         updatePen();
         update();
     }

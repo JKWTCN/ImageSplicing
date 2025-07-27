@@ -144,7 +144,7 @@ static bool saveGraphicsViewToImage(QGraphicsView *view, const QString &fileName
         view,
         "保存图片",
         lastDir + "/" + fileName, // 默认文件名
-        "PNG 图片 (*.png);;JPEG 图片 (*.jpg *.jpeg)");
+        "JPEG 图片 (*.jpg *.jpeg);;PNG 图片 (*.png)");
     if (saveFileName.isEmpty())
         return false;
 
