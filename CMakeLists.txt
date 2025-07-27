@@ -37,9 +37,6 @@ add_executable(ImageSplicing
     enumerate.cpp
     SplicingLine.h
     SplicingLine.cpp
-    editpage.h
-    editpage.cpp
-    editpage.ui
     MovablePixmapItem.h
     MovablePixmapItem.cpp
     ${TS_FILES}
