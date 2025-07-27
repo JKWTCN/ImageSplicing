@@ -13,6 +13,11 @@
 #include <cstdio>
 #include "SplicingLine.h"
 #include "config.hpp"
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
+#include <QUrl>
+#include <QFileInfo>
 using namespace std;
 
 QStringList filePaths; // 当前打开图片存储路径
@@ -27,6 +32,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButton_editResult->setVisible(false);
     if (GetSplicingTypeConfig() != ST_RAW)
         SetPaddingColorTypeConfig(PT_TRANSPARENT);
+
+    // 启用拖放功能
+    setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()
@@ -768,4 +776,111 @@ void MainWindow::on_pushButton_editSelect_clicked()
 void MainWindow::on_pushButton_editResult_clicked()
 {
     int nowIndex = ui->listImageFilesWidget->currentRow();
+}
+
+// 拖拽进入事件
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    // 检查拖入的数据是否包含文件URL
+    if (event->mimeData()->hasUrls())
+    {
+        // 检查拖入的文件是否为图片文件
+        bool hasImageFile = false;
+        QStringList supportedFormats = {"jpg", "jpeg", "png", "bmp", "gif", "tif", "tiff", "ico"};
+
+        foreach (const QUrl &url, event->mimeData()->urls())
+        {
+            if (url.isLocalFile())
+            {
+                QString filePath = url.toLocalFile();
+                QString suffix = QFileInfo(filePath).suffix().toLower();
+                if (supportedFormats.contains(suffix))
+                {
+                    hasImageFile = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasImageFile)
+        {
+            event->acceptProposedAction();
+        }
+        else
+        {
+            event->ignore();
+        }
+    }
+    else
+    {
+        event->ignore();
+    }
+}
+
+// 拖拽放下事件
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    // 获取拖入的文件URL列表
+    QStringList droppedFiles;
+    QStringList supportedFormats = {"jpg", "jpeg", "png", "bmp", "gif", "tif", "tiff", "ico"};
+
+    foreach (const QUrl &url, event->mimeData()->urls())
+    {
+        if (url.isLocalFile())
+        {
+            QString filePath = url.toLocalFile();
+            QString suffix = QFileInfo(filePath).suffix().toLower();
+            if (supportedFormats.contains(suffix))
+            {
+                droppedFiles.append(filePath);
+            }
+        }
+    }
+
+    if (!droppedFiles.isEmpty())
+    {
+        // 如果当前没有图片文件，则重置状态
+        if (filePaths.isEmpty())
+        {
+            splicingState = SS_NONE;
+            images.clear();
+
+            QGraphicsScene *scene = new QGraphicsScene;
+            ui->graphicsView_result->setScene(scene);
+            scene->installEventFilter(this);
+            ui->pushButton_auto->setEnabled(false);
+        }
+
+        // 应用反向配置
+        if (GetOpenReverseConfig())
+        {
+            QStringList tmp = droppedFiles;
+            droppedFiles.clear();
+            for (int i = tmp.length() - 1; i >= 0; i--)
+            {
+                droppedFiles.append(tmp[i]);
+            }
+        }
+
+        // 添加拖入的文件到文件列表
+        filePaths.append(droppedFiles);
+
+        // 解锁位置调整按钮
+        UnlockPostionButton();
+
+        // 更新界面
+        UpdateQListWidget();
+
+        // 如果有当前的拼接状态，刷新结果
+        if (splicingState != SS_NONE)
+        {
+            ReFreshResultWidget();
+        }
+
+        event->acceptProposedAction();
+    }
+    else
+    {
+        event->ignore();
+    }
 }

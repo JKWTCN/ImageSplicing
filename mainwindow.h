@@ -7,6 +7,10 @@
 #include <imagepro.hpp>
 #include <QWheelEvent>
 #include <QApplication>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
+#include <QUrl>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -51,5 +55,7 @@ private slots:
     bool eventFilter(QObject *obj, QEvent *event); // 事件过滤器
 protected:
     // void wheelEvent(QWheelEvent *event) override; // 重写滚轮事件
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 };
 #endif // MAINWINDOW_H
