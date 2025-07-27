@@ -2,13 +2,17 @@
 #include "SplicingLine.h"
 #include <QGraphicsScene>
 #include <QDebug>
-MovablePixmapItem::MovablePixmapItem(const QPixmap &pixmap, Move_Type moveType, QGraphicsItem *parent)
+MovablePixmapItem::MovablePixmapItem(const QPixmap &pixmap, Move_Type moveType, qreal initialX, qreal initialY, qreal initialZ, QGraphicsItem *parent)
     : QGraphicsPixmapItem(pixmap, parent)
 {
     setFlag(QGraphicsItem::ItemIsMovable, false);
-
     setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+    setPos(initialX, initialY);
+    // 初始化初始中心点坐标
+    setInitialPos(mapToScene(boundingRect().center()));
+    setZValue(initialZ);
+    qDebug() << "MovablePixmapItem:初始中心点:" << initialCenter;
     this->moveType = moveType;
 }
 
@@ -21,9 +25,6 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         QPointF oldPos = pos();
         qreal deltaY = newPos.y() - oldPos.y();
         newPos.setX(pos().x()); // 保持原始X坐标不变
-
-        qreal topY = sceneBoundingRect().top();
-        qreal bottomY = sceneBoundingRect().bottom();
         qreal currentTopY = sceneBoundingRect().top();
         qreal currentBottomY = sceneBoundingRect().bottom();
         // 上移，更新下方所有元素位置
@@ -31,7 +32,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         {
             if (topSplicingLine && !bottomSplicingLine)
             {
-                qDebug() << "最下面图片上移" << endl;
+                qDebug() << getInitialCenter() << "最下面图片上移" << endl;
                 if (!(currentBottomY + deltaY >= topSplicingLine->line().y1()))
                 {
                     return oldPos;
@@ -39,7 +40,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (bottomSplicingLine && !topSplicingLine)
             {
-                qDebug() << "最上面图片上移" << endl;
+                qDebug() << getInitialCenter() << "最上面图片上移" << endl;
                 if (!(currentBottomY + deltaY >= bottomSplicingLine->line().y1()))
                 {
                     return oldPos;
@@ -51,19 +52,19 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                 // 如果是该元素的上拼接线
                 if (topSplicingLine->isHighlighted())
                 {
-                    qDebug() << "中间图片上移:上拼接线" << endl;
+                    qDebug() << getInitialCenter() << "中间图片上移:上拼接线" << endl;
                     if (!(currentBottomY + deltaY >= topSplicingLine->line().y1()))
                     {
                         return oldPos;
                     }
 
                     // 移动当前元素下方的所有元素作为整体
-                    moveElementsBelow(currentBottomY, deltaY);
+                    moveElementsBelow(deltaY);
                 }
                 // 如果是该元素的下拼接线
                 else if (bottomSplicingLine->isHighlighted())
                 {
-                    qDebug() << "中间图片上移:下拼接线" << endl;
+                    qDebug() << getInitialCenter() << "中间图片上移:下拼接线" << endl;
                     // 如果下拼接线在当前元素底部之下
                     if (!(currentBottomY + deltaY >= bottomSplicingLine->line().y1()))
                     {
@@ -71,7 +72,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                     }
 
                     // 移动当前元素上方的所有元素作为整体
-                    moveElementsAbove(currentTopY, deltaY);
+                    moveElementsAbove(deltaY);
                 }
             }
         }
@@ -80,7 +81,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         {
             if (topSplicingLine && !bottomSplicingLine)
             {
-                qDebug() << "最下面图片下移" << endl;
+                qDebug() << getInitialCenter() << "最下面图片下移" << endl;
                 if (!(currentTopY + deltaY <= topSplicingLine->line().y1()))
                 {
                     return oldPos;
@@ -88,7 +89,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (bottomSplicingLine && !topSplicingLine)
             {
-                qDebug() << "最上面图片下移" << endl;
+                qDebug() << getInitialCenter() << "最上面图片下移" << endl;
                 if (!(currentTopY + deltaY <= bottomSplicingLine->line().y1()))
                 {
                     return oldPos;
@@ -99,23 +100,23 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
 
                 if (topSplicingLine->isHighlighted())
                 {
-                    qDebug() << "中间图片下移:上拼接线" << endl;
+                    qDebug() << getInitialCenter() << "中间图片下移:上拼接线" << endl;
                     if (!(currentTopY + deltaY <= topSplicingLine->line().y1()))
                     {
                         return oldPos;
                     }
                     // 移动当前元素下方的所有元素作为整体
-                    moveElementsBelow(currentBottomY, deltaY);
+                    moveElementsBelow(deltaY);
                 }
                 else if (bottomSplicingLine->isHighlighted())
                 {
-                    qDebug() << "中间图片下移:下拼接线" << endl;
+                    qDebug() << getInitialCenter() << "中间图片下移:下拼接线" << endl;
                     if (!(currentTopY + deltaY <= bottomSplicingLine->line().y1()))
                     {
                         return oldPos;
                     }
                     // 移动当前元素上方的所有元素作为整体
-                    moveElementsAbove(currentTopY, deltaY);
+                    moveElementsAbove(deltaY);
                 }
             }
         }
@@ -128,9 +129,6 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         QPointF oldPos = pos();
         qreal deltaX = newPos.x() - oldPos.x();
         newPos.setY(pos().y()); // 保持原始Y坐标不变
-
-        qreal rightX = sceneBoundingRect().right();
-        qreal leftX = sceneBoundingRect().left();
         qreal currentRightX = sceneBoundingRect().right();
         qreal currentLeftX = sceneBoundingRect().left();
         // 左移
@@ -149,7 +147,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                     }
 
                     // 移动当前元素右侧的所有元素作为整体
-                    moveElementsRight(currentRightX, deltaX);
+                    moveElementsRight(deltaX);
                 }
                 else if (rightSplicingLine->isHighlighted())
                 {
@@ -161,7 +159,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                     }
 
                     // 移动当前元素左侧的所有元素作为整体
-                    moveElementsLeft(currentLeftX, deltaX);
+                    moveElementsLeft(deltaX);
                 }
             }
             else if (!rightSplicingLine && leftSplicingLine)
@@ -194,12 +192,8 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                     {
                         return oldPos;
                     }
-
-                    // 获取当前元素的右边界X坐标
-                    qreal currentRightX = sceneBoundingRect().right();
-
                     // 移动当前元素右侧的所有元素作为整体
-                    moveElementsRight(currentRightX, deltaX);
+                    moveElementsRight(deltaX);
                 }
                 else if (rightSplicingLine->isHighlighted())
                 {
@@ -209,7 +203,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                         return oldPos;
                     }
                     // 移动当前元素左侧的所有元素作为整体
-                    moveElementsLeft(currentLeftX, deltaX);
+                    moveElementsLeft(deltaX);
                 }
             }
             else if (!rightSplicingLine && leftSplicingLine)
@@ -343,9 +337,10 @@ QPainterPath MovablePixmapItem::shape() const
     return path;
 };
 
-// 整体移动currentTopY以上的
-void MovablePixmapItem::moveElementsAbove(qreal currentTopY, qreal deltaY)
+// 整体移动以上的
+void MovablePixmapItem::moveElementsAbove(qreal deltaY)
 {
+    qreal init_y = getInitialCenter().y();
     // 遍历场景中的所有项目，找到位于当前元素上方的元素
     QList<QGraphicsItem *> allItems = this->scene()->items();
 
@@ -353,11 +348,11 @@ void MovablePixmapItem::moveElementsAbove(qreal currentTopY, qreal deltaY)
     {
         // 处理SplicingLine类型的项目
         SplicingLine *splicingLine = dynamic_cast<SplicingLine *>(item);
-        if (splicingLine)
+        if (splicingLine and !splicingLine->isHighlighted())
         {
-            // 检查拼接线是否位于当前元素的上方
-            qreal lineY = splicingLine->line().y1();
-            if (lineY < currentTopY)
+            // 使用初始中心点坐标判断拼接线是否位于当前元素的上方
+            QPointF initialCenter = splicingLine->getInitialCenter();
+            if (initialCenter.y() < init_y)
             {
                 // 移动拼接线
                 QLineF currentLine = splicingLine->line();
@@ -371,9 +366,9 @@ void MovablePixmapItem::moveElementsAbove(qreal currentTopY, qreal deltaY)
         MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item);
         if (pixmapItem && pixmapItem != this)
         {
-            // 检查该元素是否位于当前元素的上方
-            qreal itemBottomY = pixmapItem->sceneBoundingRect().bottom();
-            if (itemBottomY < currentTopY)
+            // 使用初始中心点坐标判断该元素是否位于当前元素的上方
+            QPointF initialCenter = pixmapItem->getInitialCenter();
+            if (initialCenter.y() < init_y)
             {
                 // 移动该元素（作为整体移动）
                 QPointF itemPos = pixmapItem->pos();
@@ -386,10 +381,10 @@ void MovablePixmapItem::moveElementsAbove(qreal currentTopY, qreal deltaY)
     }
 }
 
-// 整体移动currentBottomY以下的
-void MovablePixmapItem::moveElementsBelow(qreal currentBottomY, qreal deltaY)
+// 整体移动该元素以下的
+void MovablePixmapItem::moveElementsBelow(qreal deltaY)
 {
-
+    qreal init_y = getInitialCenter().y();
     // 遍历场景中的所有项目，找到位于当前元素下方的元素
     QList<QGraphicsItem *> allItems = this->scene()->items();
 
@@ -397,11 +392,11 @@ void MovablePixmapItem::moveElementsBelow(qreal currentBottomY, qreal deltaY)
     {
         // 处理SplicingLine类型的项目
         SplicingLine *splicingLine = dynamic_cast<SplicingLine *>(item);
-        if (splicingLine)
+        if (splicingLine and !splicingLine->isHighlighted())
         {
-            // 检查拼接线是否位于当前元素的下方
-            qreal lineY = splicingLine->line().y1();
-            if (lineY > currentBottomY)
+            // 使用初始中心点坐标判断拼接线是否位于当前元素的下方
+            QPointF initialCenter = splicingLine->getInitialCenter();
+            if (initialCenter.y() > init_y)
             {
                 // 移动拼接线
                 QLineF currentLine = splicingLine->line();
@@ -415,9 +410,9 @@ void MovablePixmapItem::moveElementsBelow(qreal currentBottomY, qreal deltaY)
         MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item);
         if (pixmapItem && pixmapItem != this)
         {
-            // 检查该元素是否位于当前元素的下方
-            qreal itemTopY = pixmapItem->sceneBoundingRect().top();
-            if (itemTopY > currentBottomY)
+            // 使用初始中心点坐标判断该元素是否位于当前元素的下方
+            QPointF initialCenter = pixmapItem->getInitialCenter();
+            if (initialCenter.y() > init_y)
             {
                 // 移动该元素（作为整体移动）
                 QPointF itemPos = pixmapItem->pos();
@@ -431,8 +426,9 @@ void MovablePixmapItem::moveElementsBelow(qreal currentBottomY, qreal deltaY)
 }
 
 // 整体移动currentLeftX以左的
-void MovablePixmapItem::moveElementsLeft(qreal currentLeftX, qreal deltaX)
+void MovablePixmapItem::moveElementsLeft(qreal deltaX)
 {
+    qreal init_x = getInitialCenter().x();
     // 遍历场景中的所有项目，找到位于当前元素左侧的元素
     QList<QGraphicsItem *> allItems = this->scene()->items();
 
@@ -440,11 +436,11 @@ void MovablePixmapItem::moveElementsLeft(qreal currentLeftX, qreal deltaX)
     {
         // 处理SplicingLine类型的项目
         SplicingLine *splicingLine = dynamic_cast<SplicingLine *>(item);
-        if (splicingLine)
+        if (splicingLine and !splicingLine->isHighlighted())
         {
-            // 检查拼接线是否位于当前元素的左侧
-            qreal lineX = splicingLine->line().x1();
-            if (lineX < currentLeftX)
+            // 使用初始中心点坐标判断拼接线是否位于当前元素的左侧
+            QPointF initialCenter = splicingLine->getInitialCenter();
+            if (initialCenter.x() < init_x)
             {
                 // 移动拼接线
                 QLineF currentLine = splicingLine->line();
@@ -458,9 +454,9 @@ void MovablePixmapItem::moveElementsLeft(qreal currentLeftX, qreal deltaX)
         MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item);
         if (pixmapItem && pixmapItem != this)
         {
-            // 检查该元素是否位于当前元素的左侧
-            qreal itemRightX = pixmapItem->sceneBoundingRect().right();
-            if (itemRightX < currentLeftX)
+            // 使用初始中心点坐标判断该元素是否位于当前元素的左侧
+            QPointF initialCenter = pixmapItem->getInitialCenter();
+            if (initialCenter.x() < init_x)
             {
                 // 移动该元素（作为整体移动）
                 QPointF itemPos = pixmapItem->pos();
@@ -474,8 +470,9 @@ void MovablePixmapItem::moveElementsLeft(qreal currentLeftX, qreal deltaX)
 }
 
 // 整体移动currentRightX以右的
-void MovablePixmapItem::moveElementsRight(qreal currentRightX, qreal deltaX)
+void MovablePixmapItem::moveElementsRight(qreal deltaX)
 {
+    qreal init_x = getInitialCenter().x();
     // 遍历场景中的所有项目，找到位于当前元素右侧的元素
     QList<QGraphicsItem *> allItems = this->scene()->items();
 
@@ -483,11 +480,11 @@ void MovablePixmapItem::moveElementsRight(qreal currentRightX, qreal deltaX)
     {
         // 处理SplicingLine类型的项目
         SplicingLine *splicingLine = dynamic_cast<SplicingLine *>(item);
-        if (splicingLine)
+        if (splicingLine and !splicingLine->isHighlighted())
         {
-            // 检查拼接线是否位于当前元素的右侧
-            qreal lineX = splicingLine->line().x1();
-            if (lineX > currentRightX)
+            // 使用初始中心点坐标判断拼接线是否位于当前元素的右侧
+            QPointF initialCenter = splicingLine->getInitialCenter();
+            if (initialCenter.x() > init_x)
             {
                 // 移动拼接线
                 QLineF currentLine = splicingLine->line();
@@ -501,9 +498,9 @@ void MovablePixmapItem::moveElementsRight(qreal currentRightX, qreal deltaX)
         MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item);
         if (pixmapItem && pixmapItem != this)
         {
-            // 检查该元素是否位于当前元素的右侧
-            qreal itemLeftX = pixmapItem->sceneBoundingRect().left();
-            if (itemLeftX > currentRightX)
+            // 使用初始中心点坐标判断该元素是否位于当前元素的右侧
+            QPointF initialCenter = pixmapItem->getInitialCenter();
+            if (initialCenter.x() > init_x)
             {
                 // 移动该元素（作为整体移动）
                 QPointF itemPos = pixmapItem->pos();

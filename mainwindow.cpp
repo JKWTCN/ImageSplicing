@@ -305,12 +305,8 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         QPixmap pixmap = QPixmap::fromImage(qimg);
 
         // 创建自定义的可拖动项
-        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_H);
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_H, xPos, verticalSpacing, 0);
         scene->addItem(item);
-        item->setInitialPos(QPointF(xPos, verticalSpacing));
-        // 设置初始位置（垂直居中，水平按顺序排列）
-        item->setPos(xPos, verticalSpacing);
-        item->setZValue(0);
 
         // 添加到列表中
         imageItems.append(item);
@@ -462,12 +458,8 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         QPixmap pixmap = QPixmap::fromImage(qimg);
 
         // 创建自定义的可拖动项
-        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V);
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V, horizontalSpacing, yPos, 0);
         scene->addItem(item);
-        item->setInitialPos(QPointF(horizontalSpacing, yPos));
-        // 设置初始位置（水平居中，垂直按顺序排列）
-        item->setPos(horizontalSpacing, yPos);
-        item->setZValue(0);
 
         // 添加到列表中
         imageItems.append(item);
@@ -1241,12 +1233,8 @@ void MainWindow::createOptimizedVerticalScene(QGraphicsScene *scene, const std::
         QPixmap pixmap = QPixmap::fromImage(qimg);
 
         // 创建自定义的可拖动项
-        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V);
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V, horizontalSpacing, yPos, 0);
         scene->addItem(item);
-        item->setInitialPos(QPointF(horizontalSpacing, yPos));
-        // 设置初始位置（水平居中，垂直按顺序排列）
-        item->setPos(horizontalSpacing, yPos);
-        item->setZValue(0);
 
         // 添加到列表中
         imageItems.append(item);
@@ -1320,13 +1308,8 @@ void MainWindow::createOptimizedHorizontalScene(QGraphicsScene *scene, const std
         QPixmap pixmap = QPixmap::fromImage(qimg);
 
         // 创建自定义的可拖动项
-        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_H);
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_H, xPos, verticalSpacing, 0);
         scene->addItem(item);
-        item->setInitialPos(QPointF(xPos, verticalSpacing));
-        // 设置初始位置（垂直居中，水平按顺序排列）
-        item->setPos(xPos, verticalSpacing);
-        item->setZValue(0);
-
         // 添加到列表中
         imageItems.append(item);
 

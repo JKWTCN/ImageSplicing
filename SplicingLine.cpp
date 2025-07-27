@@ -16,6 +16,10 @@ SplicingLine::SplicingLine(qreal x1, qreal y1, qreal x2, qreal y2,
 {
     setFlags(QGraphicsItem::ItemIsSelectable);
     setAcceptHoverEvents(true);
+    // 初始化中心点坐标
+    QLineF lineF(x1, y1, x2, y2);
+    setInitialPos(lineF.center());
+    qDebug() << "SplicingLine:初始中心点:" << m_initialCenter;
     updatePen();
 }
 

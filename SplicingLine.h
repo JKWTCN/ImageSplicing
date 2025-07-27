@@ -28,12 +28,16 @@ public:
     void setExtensionLength(qreal length) { m_extensionLength = length; }
     qreal extensionLength() const { return m_extensionLength; }
 
+    // 设置和获取初始中心点坐标
+    void setInitialPos(const QPointF &center) { m_initialCenter = center; }
+    QPointF getInitialCenter() const { return m_initialCenter; }
+
     // 设置线条粗细
     void setLineWidth(qreal normalWidth, qreal extensionWidth);
 
     // 获取和设置拼接线两端图片
-    MovablePixmapItem *getLastItem()  { return lastItem; }
-    MovablePixmapItem *getNextItem()  { return nextItem; }
+    MovablePixmapItem *getLastItem() { return lastItem; }
+    MovablePixmapItem *getNextItem() { return nextItem; }
     void setLastItem(MovablePixmapItem *item);
     void setNextItem(MovablePixmapItem *item);
 
@@ -57,6 +61,8 @@ private:
     // 拼接线对应的两端图片
     MovablePixmapItem *lastItem;
     MovablePixmapItem *nextItem;
+    // 初始中心点坐标
+    QPointF m_initialCenter;
 };
 
 #endif // SPLICINGLINE_H
