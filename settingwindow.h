@@ -20,6 +20,8 @@ private slots:
 
     void on_comboBox_saveType_currentIndexChanged(int index);
 
+    void on_spinBox_jpg_quality_valueChanged(int arg1);
+
 private:
     Ui::SettingWindow *ui;
 };

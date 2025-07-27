@@ -14,6 +14,7 @@ SettingWindow::SettingWindow(QWidget *parent) : QDialog(parent),
     ui->comboBox_narrowType->setCurrentIndex(static_cast<int>(GetNarrowTypeConfig()));
     ui->comboBox_shrinkType->setCurrentIndex(static_cast<int>(GetShrinkTypeConfig()));
     ui->comboBox_featureExtraction->setCurrentIndex(static_cast<int>(GetFeatureExtractionConfig()));
+    ui->spinBox_jpg_quality->setValue(GetJpgQualityConfig());
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, [this]()
             {
         SetOpenReverseConfig(ui->checkBox_openReverse->isChecked());
@@ -24,6 +25,8 @@ SettingWindow::SettingWindow(QWidget *parent) : QDialog(parent),
         SetNarrowTypeConfig(static_cast<InterpolationType>(ui->comboBox_narrowType->currentIndex()));
         SetShrinkTypeConfig(static_cast<InterpolationType>(ui->comboBox_shrinkType->currentIndex()));
         SetFeatureExtractionConfig(static_cast<FeatureExtraction>(ui->comboBox_featureExtraction->currentIndex()));
+        SetJpgQualityConfig(int(ui->spinBox_jpg_quality->value()));
+
         this->close(); });
     connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &SettingWindow::close);
     QListView *view = qobject_cast<QListView *>(ui->comboBox_splicingType->view());
@@ -56,6 +59,16 @@ void SettingWindow::on_comboBox_splicingType_currentIndexChanged(int index)
         ui->comboBox_paddingType->setVisible(true);
         ui->label_paddingType->setVisible(true);
     }
+    if (ui->comboBox_saveType->currentIndex() == ST_JPG)
+    {
+        ui->spinBox_jpg_quality->setVisible(true);
+        ui->label_jpg_quality->setVisible(true);
+    }
+    else
+    {
+        ui->spinBox_jpg_quality->setVisible(false);
+        ui->label_jpg_quality->setVisible(false);
+    }
 }
 
 void SettingWindow::on_comboBox_saveType_currentIndexChanged(int index)
@@ -72,4 +85,20 @@ void SettingWindow::on_comboBox_saveType_currentIndexChanged(int index)
         QListView *view = qobject_cast<QListView *>(ui->comboBox_paddingType->view());
         view->setRowHidden(PT_TRANSPARENT, true);
     }
+    if (ui->comboBox_saveType->currentIndex() == ST_JPG)
+    {
+        ui->spinBox_jpg_quality->setVisible(true);
+        ui->label_jpg_quality->setVisible(true);
+    }
+    else
+    {
+        ui->spinBox_jpg_quality->setVisible(false);
+        ui->label_jpg_quality->setVisible(false);
+    }
+}
+
+void SettingWindow::on_spinBox_jpg_quality_valueChanged(int arg1)
+{
+    QSettings settings("iCloudWar", "ImageSplicing");
+    settings.setValue("JpgQuality", arg1);
 }

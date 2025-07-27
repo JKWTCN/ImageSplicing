@@ -188,8 +188,6 @@ void MainWindow::UnlockPostionButton()
     ui->pushButton_5->setEnabled(true);
     ui->pushButton_6->setEnabled(true);
     ui->pushButton_7->setEnabled(true);
-    ui->pushButton_LayerUp->setEnabled(true);
-    ui->pushButton_LayerDown->setEnabled(true);
     ui->pushButton_copy->setEnabled(true);
     ui->pushButton_add->setEnabled(true);
     ui->pushButton_editResult->setEnabled(true);
@@ -202,8 +200,6 @@ void MainWindow::LockPostionButton()
     ui->pushButton_5->setEnabled(false);
     ui->pushButton_6->setEnabled(false);
     ui->pushButton_7->setEnabled(false);
-    ui->pushButton_LayerUp->setEnabled(false);
-    ui->pushButton_LayerDown->setEnabled(false);
     ui->pushButton_copy->setEnabled(false);
     ui->pushButton_add->setEnabled(false);
     ui->pushButton_editResult->setEnabled(false);
@@ -388,10 +384,29 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
     ui->pushButton_save->setEnabled(true);
     if (!scene || scene->items().isEmpty())
         return;
-    // 获取所有可见项目的边界矩形
-    QRectF boundingRect = scene->itemsBoundingRect();
+
+    // 只计算图片项目的边界矩形，忽略拼接线
+    QRectF boundingRect;
+    bool hasImageItems = false;
+    for (auto item : scene->items())
+    {
+        // 只考虑MovablePixmapItem类型的项目
+        if (MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item))
+        {
+            if (!hasImageItems)
+            {
+                boundingRect = pixmapItem->boundingRect().translated(pixmapItem->pos());
+                hasImageItems = true;
+            }
+            else
+            {
+                boundingRect = boundingRect.united(pixmapItem->boundingRect().translated(pixmapItem->pos()));
+            }
+        }
+    }
+
     // 调整场景大小
-    if (!boundingRect.isNull())
+    if (!boundingRect.isNull() && hasImageItems)
     {
         scene->setSceneRect(boundingRect);
         ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
@@ -583,10 +598,29 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     ui->pushButton_save->setEnabled(true);
     if (!scene || scene->items().isEmpty())
         return;
-    // 获取所有可见项目的边界矩形
-    QRectF boundingRect = scene->itemsBoundingRect();
+
+    // 只计算图片项目的边界矩形，忽略拼接线
+    QRectF boundingRect;
+    bool hasImageItems = false;
+    for (auto item : scene->items())
+    {
+        // 只考虑MovablePixmapItem类型的项目
+        if (MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item))
+        {
+            if (!hasImageItems)
+            {
+                boundingRect = pixmapItem->boundingRect().translated(pixmapItem->pos());
+                hasImageItems = true;
+            }
+            else
+            {
+                boundingRect = boundingRect.united(pixmapItem->boundingRect().translated(pixmapItem->pos()));
+            }
+        }
+    }
+
     // 调整场景大小
-    if (!boundingRect.isNull())
+    if (!boundingRect.isNull() && hasImageItems)
     {
         scene->setSceneRect(boundingRect);
         ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
@@ -660,8 +694,27 @@ void MainWindow::on_pushButton_auto_clicked()
         // 获取场景边界并设置
         if (!scene->items().isEmpty())
         {
-            QRectF boundingRect = scene->itemsBoundingRect();
-            if (!boundingRect.isNull())
+            // 只计算图片项目的边界矩形，忽略拼接线
+            QRectF boundingRect;
+            bool hasImageItems = false;
+            for (auto item : scene->items())
+            {
+                // 只考虑MovablePixmapItem类型的项目
+                if (MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item))
+                {
+                    if (!hasImageItems)
+                    {
+                        boundingRect = pixmapItem->boundingRect().translated(pixmapItem->pos());
+                        hasImageItems = true;
+                    }
+                    else
+                    {
+                        boundingRect = boundingRect.united(pixmapItem->boundingRect().translated(pixmapItem->pos()));
+                    }
+                }
+            }
+
+            if (!boundingRect.isNull() && hasImageItems)
             {
                 scene->setSceneRect(boundingRect);
                 ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
@@ -763,10 +816,29 @@ void MainWindow::on_pushButton_save_clicked()
     scene->clearSelection();
     if (!scene || scene->items().isEmpty())
         return;
-    // 获取所有可见项目的边界矩形
-    QRectF boundingRect = scene->itemsBoundingRect();
+
+    // 只计算图片项目的边界矩形，忽略拼接线
+    QRectF boundingRect;
+    bool hasImageItems = false;
+    for (auto item : scene->items())
+    {
+        // 只考虑MovablePixmapItem类型的项目
+        if (MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item))
+        {
+            if (!hasImageItems)
+            {
+                boundingRect = pixmapItem->boundingRect().translated(pixmapItem->pos());
+                hasImageItems = true;
+            }
+            else
+            {
+                boundingRect = boundingRect.united(pixmapItem->boundingRect().translated(pixmapItem->pos()));
+            }
+        }
+    }
+
     // 调整场景大小
-    if (!boundingRect.isNull())
+    if (!boundingRect.isNull() && hasImageItems)
     {
         scene->setSceneRect(boundingRect);
         ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);

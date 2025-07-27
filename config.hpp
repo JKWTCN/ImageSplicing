@@ -125,3 +125,15 @@ static void SetNarrowTypeConfig(InterpolationType getNarrowType)
     QSettings settings("iCloudWar", "ImageSplicing");
     settings.setValue("NarrowType", getNarrowType);
 }
+
+static int GetJpgQualityConfig()
+{
+    QSettings settings("iCloudWar", "ImageSplicing");
+    int jpgQuality = settings.value("JpgQuality", 100).toInt(); // 默认 JPEG 质量
+    return jpgQuality;
+}
+static void SetJpgQualityConfig(int jpgQuality)
+{
+    QSettings settings("iCloudWar", "ImageSplicing");
+    settings.setValue("JpgQuality", jpgQuality);
+}

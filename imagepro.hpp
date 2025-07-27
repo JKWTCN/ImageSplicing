@@ -155,7 +155,8 @@ static bool saveGraphicsViewToImage(QGraphicsView *view, const QString &fileName
     }
     else if (saveFileName.endsWith(".jpg", Qt::CaseInsensitive) || saveFileName.endsWith(".jpeg", Qt::CaseInsensitive))
     {
-        return image.save(saveFileName, "JPEG", 100); // JPEG 质量（0-100）
+        int jpgQuality = settings.value("JpgQuality", 100).toInt(); // 默认 JPEG 质量
+        return image.save(saveFileName, "JPEG", jpgQuality);
     }
     else
     {
