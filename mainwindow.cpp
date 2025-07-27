@@ -1,16 +1,11 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <iostream>
-#include <ShlObj.h>
-#include <windows.h>
-#include <Commdlg.h>
 #include <QFileDialog>
 #include <QStringList>
 #include <QGraphicsSceneWheelEvent>
-#include <opencv2/calib3d.hpp>
 #include <settingwindow.h>
 #include <ctime>
-#include <cstdio>
 #include "SplicingLine.h"
 #include "MovablePixmapItem.h"
 #include "config.hpp"
@@ -19,6 +14,7 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QFileInfo>
+#include "aboutdialog.h"
 using namespace std;
 
 QStringList filePaths; // 当前打开图片存储路径
@@ -178,6 +174,12 @@ void MainWindow::on_setting_action_triggered()
 // 打开关于界面
 void MainWindow::on_action_about_triggered()
 {
+    AboutDialog *aboutDialog = new AboutDialog();
+    aboutDialog->setWindowModality(Qt::ApplicationModal); // 设置为应用程序模态
+    aboutDialog->setAttribute(Qt::WA_DeleteOnClose);      // 关闭时自动删除
+    aboutDialog->show();
+    aboutDialog->activateWindow(); // 激活窗口并获取焦点
+    aboutDialog->raise();
 }
 
 // 解锁图片调整按钮
@@ -815,12 +817,12 @@ void MainWindow::on_pushButton_add_clicked()
 
 void MainWindow::on_pushButton_editSelect_clicked()
 {
-    int nowIndex = ui->listImageFilesWidget->currentRow();
+    //    int nowIndex = ui->listImageFilesWidget->currentRow();
 }
 
 void MainWindow::on_pushButton_editResult_clicked()
 {
-    int nowIndex = ui->listImageFilesWidget->currentRow();
+    //    int nowIndex = ui->listImageFilesWidget->currentRow();
 }
 
 // 拖拽进入事件

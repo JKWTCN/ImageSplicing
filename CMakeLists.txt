@@ -23,6 +23,7 @@ message(STATUS "include path: ${OpenCV_INCLUDE_DIRS}")
 
 add_executable(ImageSplicing
     WIN32
+    resource.rc
     main.cpp
     tools.hpp
     mainwindow.cpp
@@ -39,6 +40,9 @@ add_executable(ImageSplicing
     SplicingLine.cpp
     MovablePixmapItem.h
     MovablePixmapItem.cpp
+    aboutdialog.h
+    aboutdialog.cpp
+    aboutdialog.ui
     ${TS_FILES}
 )
 
@@ -46,7 +50,6 @@ target_link_libraries(ImageSplicing PRIVATE
     Qt5::Widgets
     ${OpenCV_LIBS}
 )
-
 target_include_directories(ImageSplicing PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})

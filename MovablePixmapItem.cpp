@@ -47,10 +47,11 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (topSplicingLine && bottomSplicingLine)
             {
-                qDebug() << "中间图片上移" << endl;
+
                 // 如果是该元素的上拼接线
                 if (topSplicingLine->isHighlighted())
                 {
+                    qDebug() << "中间图片上移:上拼接线" << endl;
                     if (!(currentBottomY + deltaY >= topSplicingLine->line().y1()))
                     {
                         return oldPos;
@@ -62,6 +63,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                 // 如果是该元素的下拼接线
                 else if (bottomSplicingLine->isHighlighted())
                 {
+                    qDebug() << "中间图片上移:下拼接线" << endl;
                     // 如果下拼接线在当前元素底部之下
                     if (!(currentBottomY + deltaY >= bottomSplicingLine->line().y1()))
                     {
@@ -94,10 +96,10 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (topSplicingLine && bottomSplicingLine)
             {
-                qDebug() << "中间图片下移" << endl;
+
                 if (topSplicingLine->isHighlighted())
                 {
-
+                    qDebug() << "中间图片下移:上拼接线" << endl;
                     if (!(currentTopY + deltaY <= topSplicingLine->line().y1()))
                     {
                         return oldPos;
@@ -107,11 +109,12 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                 }
                 else if (bottomSplicingLine->isHighlighted())
                 {
+                    qDebug() << "中间图片下移:下拼接线" << endl;
                     if (!(currentTopY + deltaY <= bottomSplicingLine->line().y1()))
                     {
                         return oldPos;
                     }
-                    // 移动当前元素下方的所有元素作为整体
+                    // 移动当前元素上方的所有元素作为整体
                     moveElementsAbove(currentTopY, deltaY);
                 }
             }
@@ -135,9 +138,10 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         {
             if (rightSplicingLine && leftSplicingLine)
             {
-                qDebug() << "中间图片左移" << endl;
+
                 if (leftSplicingLine->isHighlighted())
                 {
+                    qDebug() << "中间图片左移:左拼接线" << endl;
                     // 获取当前元素的右边界X坐标
                     if (!(currentRightX + deltaX >= leftSplicingLine->line().x1()))
                     {
@@ -149,6 +153,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                 }
                 else if (rightSplicingLine->isHighlighted())
                 {
+                    qDebug() << "中间图片左移:右拼接线" << endl;
                     // 获取当前元素的右边界X坐标
                     if (!(currentRightX + deltaX >= rightSplicingLine->line().x1()))
                     {
@@ -181,9 +186,10 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         {
             if (rightSplicingLine && leftSplicingLine)
             {
-                qDebug() << "中间图片右移" << endl;
+
                 if (leftSplicingLine->isHighlighted())
                 {
+                    qDebug() << "中间图片右移:左拼接线" << endl;
                     if (!(currentLeftX + deltaX <= leftSplicingLine->line().x1()))
                     {
                         return oldPos;
@@ -197,6 +203,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                 }
                 else if (rightSplicingLine->isHighlighted())
                 {
+                    qDebug() << "中间图片右移:右拼接线" << endl;
                     if (!(currentLeftX + deltaX <= rightSplicingLine->line().x1()))
                     {
                         return oldPos;

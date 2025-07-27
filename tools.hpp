@@ -1,6 +1,5 @@
 #include <string>
 #include <QString>
-#include "nlohmann/json.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -9,7 +8,6 @@
 #include <QSettings>
 #include <QDir>
 #include <QFileDialog>
-using json = nlohmann::json;
 
 using namespace std;
 
@@ -86,9 +84,8 @@ static void showQuestionMessageBox(string title, string content)
                           QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 }
 
-
-
-static QStringList OpenImagePaths(){
+static QStringList OpenImagePaths()
+{
     // 设置文件过滤器
     QString filter = "All Image Files (*.JPG *.jpeg *.PNG *.bmp *.gif *.tif *.tiff *.ico);;"
                      "JPEG Files (*.JPG *.jpeg);;"
@@ -104,7 +101,7 @@ static QStringList OpenImagePaths(){
 
     // 打开文件对话框，允许多选
     QStringList filePaths = QFileDialog::getOpenFileNames(
-        nullptr,       // 父窗口
+        nullptr,    // 父窗口
         "选择文件", // 对话框标题
         lastDir,    // 使用上次的目录作为初始目录
         filter      // 文件过滤器
