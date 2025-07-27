@@ -17,9 +17,9 @@ find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
 
 # 打印 OpenCV 信息用于调试
 message(STATUS "OpenCV library status:")
-message(STATUS "    version: ${OpenCV_VERSION}")
-message(STATUS "    libraries: ${OpenCV_LIBS}")
-message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
+message(STATUS "version: ${OpenCV_VERSION}")
+message(STATUS "libraries: ${OpenCV_LIBS}")
+message(STATUS "include path: ${OpenCV_INCLUDE_DIRS}")
 
 add_executable(ImageSplicing
     WIN32

@@ -35,6 +35,13 @@ private:
     void UnlockPostionButton();
     void LockPostionButton();
     void ReFreshResultWidget();
+    // 增强拼接函数
+    cv::Mat performEnhancedVerticalStitching(const std::vector<cv::Mat> &images);
+    cv::Mat performEnhancedHorizontalStitching(const std::vector<cv::Mat> &images);
+    // 自动调整相关函数
+    bool performAutoAlignment(const std::vector<cv::Mat> &images, std::vector<cv::Mat> &optimizedImages);
+    void createOptimizedVerticalScene(QGraphicsScene *scene, const std::vector<cv::Mat> &images);
+    void createOptimizedHorizontalScene(QGraphicsScene *scene, const std::vector<cv::Mat> &images);
 private slots:
     void openFilesBtnPress();
     void upImagePosition();

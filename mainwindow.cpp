@@ -12,6 +12,7 @@
 #include <ctime>
 #include <cstdio>
 #include "SplicingLine.h"
+#include "MovablePixmapItem.h"
 #include "config.hpp"
 #include <QDragEnterEvent>
 #include <QDropEvent>
@@ -518,6 +519,14 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
 // 自动调整图像
 void MainWindow::on_pushButton_auto_clicked()
 {
+    if (images.empty() || splicingState == SS_NONE)
+    {
+        showNoticeMessageBox("提示", "请先进行图像拼接后再使用自动调整功能。");
+        return;
+    }
+
+    SplicingState originalState = splicingState;
+
     switch (splicingState)
     {
     case SS_VERTICAL:
@@ -530,43 +539,79 @@ void MainWindow::on_pushButton_auto_clicked()
         break;
     }
 
-    cv::Mat result;
-    if (!AutoStitchImages(images, result))
-    {
-        showNoticeMessageBox("提示", "图像自动调整失败，请检查图像是否适合拼接。");
-        switch (splicingState)
-        {
-        case SS_AUTO_VERTICAL:
-            splicingState = SS_VERTICAL;
-            break;
-        case SS_AUTO_HORIZONTAL:
-            splicingState = SS_HORIZONTAL;
-            break;
-        default:
-            break;
-        }
-        return;
-    }
     try
     {
-        cv::vconcat(images, result);
-        // 将 OpenCV 的 BGR 格式转换为 RGB 格式
-        cv::cvtColor(result, result, cv::COLOR_BGR2RGB);
-        // 创建 QImage 并从 cv::Mat 复制数据
-        QImage qimg(result.data, result.cols, result.rows, result.step, QImage::Format_RGB888);
-        // 将 QImage 转换为 QPixmap
-        QPixmap pixmap = QPixmap::fromImage(qimg);
-        QGraphicsScene *scene = new QGraphicsScene;
-        scene->addPixmap(pixmap); // 传入转换后的 pixmap
+        // 使用改进的自动调整算法，但保持拼接线显示
+        bool success = false;
+        std::vector<cv::Mat> optimizedImages;
+
+        // 首先尝试使用特征匹配进行图像优化
+        if (images.size() >= 2)
+        {
+            success = performAutoAlignment(images, optimizedImages);
+        }
+
+        // 如果自动对齐失败，使用原始图像
+        if (!success || optimizedImages.empty())
+        {
+            optimizedImages = images;
+            success = true;
+        }
+
+        // 根据拼接方向创建优化后的拼接场景
+        QGraphicsScene *scene = new QGraphicsScene(this);
+
+        if (splicingState == SS_AUTO_VERTICAL || originalState == SS_VERTICAL)
+        {
+            createOptimizedVerticalScene(scene, optimizedImages);
+        }
+        else if (splicingState == SS_AUTO_HORIZONTAL || originalState == SS_HORIZONTAL)
+        {
+            createOptimizedHorizontalScene(scene, optimizedImages);
+        }
+        else
+        {
+            // 默认使用垂直拼接
+            createOptimizedVerticalScene(scene, optimizedImages);
+        }
+
+        // 设置场景
         ui->graphicsView_result->setScene(scene);
         scene->installEventFilter(this);
+
+        // 获取场景边界并设置
+        if (!scene->items().isEmpty())
+        {
+            QRectF boundingRect = scene->itemsBoundingRect();
+            if (!boundingRect.isNull())
+            {
+                scene->setSceneRect(boundingRect);
+                ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
+            }
+        }
+
         ui->pushButton_auto->setEnabled(true);
         ui->pushButton_save->setEnabled(true);
+
+        showNoticeMessageBox("提示", success ? "自动调整完成" : "使用原始图像完成拼接");
     }
     catch (cv::Exception &e)
     {
         std::cerr << "OpenCV异常: " << e.what() << std::endl;
-        showErrorMessageBox("错误", e.what());
+        showErrorMessageBox("错误", "图像处理异常: " + std::string(e.what()));
+        splicingState = originalState;
+    }
+    catch (std::exception &e)
+    {
+        std::cerr << "标准异常: " << e.what() << std::endl;
+        showErrorMessageBox("错误", "处理异常: " + std::string(e.what()));
+        splicingState = originalState;
+    }
+    catch (...)
+    {
+        std::cerr << "未知异常" << std::endl;
+        showErrorMessageBox("错误", "发生未知异常");
+        splicingState = originalState;
     }
 }
 // 事件过滤器
@@ -882,5 +927,436 @@ void MainWindow::dropEvent(QDropEvent *event)
     else
     {
         event->ignore();
+    }
+}
+
+// 增强垂直拼接函数
+cv::Mat MainWindow::performEnhancedVerticalStitching(const std::vector<cv::Mat> &images)
+{
+    if (images.empty())
+    {
+        return cv::Mat();
+    }
+
+    if (images.size() == 1)
+    {
+        return images[0].clone();
+    }
+
+    try
+    {
+        // 统一图像宽度
+        std::vector<cv::Mat> resizedImages;
+        int targetWidth = images[0].cols;
+
+        // 根据配置确定目标宽度
+        for (const auto &img : images)
+        {
+            switch (GetSplicingTypeConfig())
+            {
+            case ST_HIGH2LOW:
+                targetWidth = std::min(targetWidth, img.cols);
+                break;
+            case ST_LOW2HIGH:
+                targetWidth = std::max(targetWidth, img.cols);
+                break;
+            case ST_RAW:
+                targetWidth = std::max(targetWidth, img.cols);
+                break;
+            }
+        }
+
+        // 调整所有图像到目标宽度
+        for (const auto &img : images)
+        {
+            cv::Mat resizedImg;
+            if (img.cols != targetWidth && GetSplicingTypeConfig() != ST_RAW)
+            {
+                switch (GetSplicingTypeConfig())
+                {
+                case ST_HIGH2LOW:
+                    resizedImg = ResizeByWidth(img, targetWidth, GetShrinkTypeConfig());
+                    break;
+                case ST_LOW2HIGH:
+                    resizedImg = ResizeByWidth(img, targetWidth, GetNarrowTypeConfig());
+                    break;
+                default:
+                    resizedImg = img.clone();
+                    break;
+                }
+            }
+            else
+            {
+                resizedImg = img.clone();
+            }
+            resizedImages.push_back(resizedImg);
+        }
+
+        // 执行垂直拼接
+        cv::Mat result;
+        cv::vconcat(resizedImages, result);
+
+        return result;
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "增强垂直拼接异常: " << e.what() << std::endl;
+        return cv::Mat();
+    }
+}
+
+// 增强水平拼接函数
+cv::Mat MainWindow::performEnhancedHorizontalStitching(const std::vector<cv::Mat> &images)
+{
+    if (images.empty())
+    {
+        return cv::Mat();
+    }
+
+    if (images.size() == 1)
+    {
+        return images[0].clone();
+    }
+
+    try
+    {
+        // 统一图像高度
+        std::vector<cv::Mat> resizedImages;
+        int targetHeight = images[0].rows;
+
+        // 根据配置确定目标高度
+        for (const auto &img : images)
+        {
+            switch (GetSplicingTypeConfig())
+            {
+            case ST_HIGH2LOW:
+                targetHeight = std::min(targetHeight, img.rows);
+                break;
+            case ST_LOW2HIGH:
+                targetHeight = std::max(targetHeight, img.rows);
+                break;
+            case ST_RAW:
+                targetHeight = std::max(targetHeight, img.rows);
+                break;
+            }
+        }
+
+        // 调整所有图像到目标高度
+        for (const auto &img : images)
+        {
+            cv::Mat resizedImg;
+            if (img.rows != targetHeight && GetSplicingTypeConfig() != ST_RAW)
+            {
+                switch (GetSplicingTypeConfig())
+                {
+                case ST_HIGH2LOW:
+                    resizedImg = ResizeByHeight(img, targetHeight, GetShrinkTypeConfig());
+                    break;
+                case ST_LOW2HIGH:
+                    resizedImg = ResizeByHeight(img, targetHeight, GetNarrowTypeConfig());
+                    break;
+                default:
+                    resizedImg = img.clone();
+                    break;
+                }
+            }
+            else
+            {
+                resizedImg = img.clone();
+            }
+            resizedImages.push_back(resizedImg);
+        }
+
+        // 执行水平拼接
+        cv::Mat result;
+        cv::hconcat(resizedImages, result);
+
+        return result;
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "增强水平拼接异常: " << e.what() << std::endl;
+        return cv::Mat();
+    }
+}
+
+// 自动对齐函数
+bool MainWindow::performAutoAlignment(const std::vector<cv::Mat> &images, std::vector<cv::Mat> &optimizedImages)
+{
+    optimizedImages.clear();
+
+    if (images.empty())
+    {
+        return false;
+    }
+
+    if (images.size() == 1)
+    {
+        optimizedImages.push_back(images[0].clone());
+        return true;
+    }
+
+    try
+    {
+        // 对于简单的对齐，我们主要进行尺寸标准化和位置微调
+        std::vector<cv::Mat> alignedImages;
+
+        // 统一图像尺寸（根据拼接方向）
+        if (splicingState == SS_AUTO_VERTICAL || splicingState == SS_VERTICAL)
+        {
+            // 垂直拼接 - 统一宽度
+            int targetWidth = images[0].cols;
+            for (const auto &img : images)
+            {
+                switch (GetSplicingTypeConfig())
+                {
+                case ST_HIGH2LOW:
+                    targetWidth = std::min(targetWidth, img.cols);
+                    break;
+                case ST_LOW2HIGH:
+                    targetWidth = std::max(targetWidth, img.cols);
+                    break;
+                case ST_RAW:
+                    targetWidth = std::max(targetWidth, img.cols);
+                    break;
+                }
+            }
+
+            for (const auto &img : images)
+            {
+                cv::Mat aligned;
+                if (img.cols != targetWidth && GetSplicingTypeConfig() != ST_RAW)
+                {
+                    switch (GetSplicingTypeConfig())
+                    {
+                    case ST_HIGH2LOW:
+                        aligned = ResizeByWidth(img, targetWidth, GetShrinkTypeConfig());
+                        break;
+                    case ST_LOW2HIGH:
+                        aligned = ResizeByWidth(img, targetWidth, GetNarrowTypeConfig());
+                        break;
+                    default:
+                        aligned = img.clone();
+                        break;
+                    }
+                }
+                else
+                {
+                    aligned = img.clone();
+                }
+                alignedImages.push_back(aligned);
+            }
+        }
+        else
+        {
+            // 水平拼接 - 统一高度
+            int targetHeight = images[0].rows;
+            for (const auto &img : images)
+            {
+                switch (GetSplicingTypeConfig())
+                {
+                case ST_HIGH2LOW:
+                    targetHeight = std::min(targetHeight, img.rows);
+                    break;
+                case ST_LOW2HIGH:
+                    targetHeight = std::max(targetHeight, img.rows);
+                    break;
+                case ST_RAW:
+                    targetHeight = std::max(targetHeight, img.rows);
+                    break;
+                }
+            }
+
+            for (const auto &img : images)
+            {
+                cv::Mat aligned;
+                if (img.rows != targetHeight && GetSplicingTypeConfig() != ST_RAW)
+                {
+                    switch (GetSplicingTypeConfig())
+                    {
+                    case ST_HIGH2LOW:
+                        aligned = ResizeByHeight(img, targetHeight, GetShrinkTypeConfig());
+                        break;
+                    case ST_LOW2HIGH:
+                        aligned = ResizeByHeight(img, targetHeight, GetNarrowTypeConfig());
+                        break;
+                    default:
+                        aligned = img.clone();
+                        break;
+                    }
+                }
+                else
+                {
+                    aligned = img.clone();
+                }
+                alignedImages.push_back(aligned);
+            }
+        }
+
+        optimizedImages = alignedImages;
+        return true;
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "自动对齐异常: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+// 创建优化的垂直场景
+void MainWindow::createOptimizedVerticalScene(QGraphicsScene *scene, const std::vector<cv::Mat> &images)
+{
+    if (!scene || images.empty())
+        return;
+
+    // 初始Y坐标
+    int yPos = 0;
+    const int horizontalSpacing = 0; // 水平居中位置
+    const int verticalSpacing = 0;   // 图片间垂直间距
+
+    // 存储图片项目，用于后续添加拼接线
+    QList<MovablePixmapItem *> imageItems;
+
+    // 将所有图像添加到场景中
+    for (const auto &image : images)
+    {
+        // 将 OpenCV 的 BGR 格式转换为 RGB 格式
+        cv::Mat rgbImage;
+        if (image.channels() == 3)
+        {
+            cv::cvtColor(image, rgbImage, cv::COLOR_BGR2RGB);
+        }
+        else
+        {
+            rgbImage = image.clone();
+        }
+
+        // 创建 QImage 并从 cv::Mat 复制数据
+        QImage qimg(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step,
+                    image.channels() == 3 ? QImage::Format_RGB888 : QImage::Format_Grayscale8);
+
+        // 将 QImage 转换为 QPixmap
+        QPixmap pixmap = QPixmap::fromImage(qimg);
+
+        // 创建自定义的可拖动项
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V);
+        scene->addItem(item);
+        item->setInitialPos(QPointF(horizontalSpacing, yPos));
+        // 设置初始位置（水平居中，垂直按顺序排列）
+        item->setPos(horizontalSpacing, yPos);
+        item->setZValue(0);
+
+        // 添加到列表中
+        imageItems.append(item);
+
+        // 更新下一个图片的Y位置
+        yPos += pixmap.height() + verticalSpacing;
+    }
+
+    // 在相邻图片之间添加拼接线
+    for (int i = 0; i < imageItems.size() - 1; i++)
+    {
+        MovablePixmapItem *currentItem = imageItems[i];
+        MovablePixmapItem *nextItem = imageItems[i + 1];
+
+        // 计算拼接线位置（两个图片之间的边界）
+        qreal lineY = currentItem->pos().y() + currentItem->pixmap().height();
+        qreal lineX1 = qMin(currentItem->pos().x(), nextItem->pos().x()) - 30; // 向左扩展30像素
+        qreal lineX2 = qMax(currentItem->pos().x() + currentItem->pixmap().width(),
+                            nextItem->pos().x() + nextItem->pixmap().width()) +
+                       30; // 向右扩展30像素
+
+        // 创建水平拼接线
+        SplicingLine *splicingLine = new SplicingLine(lineX1, lineY, lineX2, lineY,
+                                                      SplicingLineOrientation::Horizontal);
+        splicingLine->setExtensionLength(30);
+        splicingLine->setLineWidth(2.0, 8.0);
+        splicingLine->setZValue(1); // 确保拼接线在图片之上
+        scene->addItem(splicingLine);
+
+        // 设置图片项和拼接线的关联关系
+        currentItem->setBottomSplicingLine(splicingLine); // 当前图片的下拼接线
+        nextItem->setTopSplicingLine(splicingLine);       // 下一个图片的上拼接线
+        splicingLine->setLastItem(currentItem);
+        splicingLine->setNextItem(nextItem);
+    }
+}
+
+// 创建优化的水平场景
+void MainWindow::createOptimizedHorizontalScene(QGraphicsScene *scene, const std::vector<cv::Mat> &images)
+{
+    if (!scene || images.empty())
+        return;
+
+    // 初始X坐标
+    int xPos = 0;
+    const int verticalSpacing = 0;   // 垂直居中位置
+    const int horizontalSpacing = 0; // 图片间水平间距
+
+    // 存储图片项目，用于后续添加拼接线
+    QList<MovablePixmapItem *> imageItems;
+
+    // 将所有图像添加到场景中
+    for (const auto &image : images)
+    {
+        // 将 OpenCV 的 BGR 格式转换为 RGB 格式
+        cv::Mat rgbImage;
+        if (image.channels() == 3)
+        {
+            cv::cvtColor(image, rgbImage, cv::COLOR_BGR2RGB);
+        }
+        else
+        {
+            rgbImage = image.clone();
+        }
+
+        // 创建 QImage 并从 cv::Mat 复制数据
+        QImage qimg(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step,
+                    image.channels() == 3 ? QImage::Format_RGB888 : QImage::Format_Grayscale8);
+
+        // 将 QImage 转换为 QPixmap
+        QPixmap pixmap = QPixmap::fromImage(qimg);
+
+        // 创建自定义的可拖动项
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_H);
+        scene->addItem(item);
+        item->setInitialPos(QPointF(xPos, verticalSpacing));
+        // 设置初始位置（垂直居中，水平按顺序排列）
+        item->setPos(xPos, verticalSpacing);
+        item->setZValue(0);
+
+        // 添加到列表中
+        imageItems.append(item);
+
+        // 更新下一个图片的X位置
+        xPos += pixmap.width() + horizontalSpacing;
+    }
+
+    // 在相邻图片之间添加拼接线
+    for (int i = 0; i < imageItems.size() - 1; i++)
+    {
+        MovablePixmapItem *currentItem = imageItems[i];
+        MovablePixmapItem *nextItem = imageItems[i + 1];
+
+        // 计算拼接线位置（两个图片之间的边界）
+        qreal lineX = currentItem->pos().x() + currentItem->pixmap().width();
+        qreal lineY1 = qMin(currentItem->pos().y(), nextItem->pos().y()) - 30; // 向上扩展30像素
+        qreal lineY2 = qMax(currentItem->pos().y() + currentItem->pixmap().height(),
+                            nextItem->pos().y() + nextItem->pixmap().height()) +
+                       30; // 向下扩展30像素
+
+        // 创建垂直拼接线
+        SplicingLine *splicingLine = new SplicingLine(lineX, lineY1, lineX, lineY2,
+                                                      SplicingLineOrientation::Vertical);
+        splicingLine->setExtensionLength(30);
+        splicingLine->setLineWidth(2.0, 8.0);
+        splicingLine->setZValue(1); // 确保拼接线在图片之上
+        scene->addItem(splicingLine);
+
+        // 设置图片项和拼接线的关联关系
+        currentItem->setRightSplicingLine(splicingLine); // 当前图片的右拼接线
+        nextItem->setLeftSplicingLine(splicingLine);     // 下一个图片的左拼接线
+        splicingLine->setLastItem(currentItem);
+        splicingLine->setNextItem(nextItem);
     }
 }

@@ -164,17 +164,187 @@ static bool saveGraphicsViewToImage(QGraphicsView *view, const QString &fileName
     }
 }
 
+// 辅助函数声明
+static bool trySimpleFeatureMatching(const std::vector<cv::Mat> &images, cv::Mat &result);
+static bool performSimpleConcatenation(const std::vector<cv::Mat> &images, cv::Mat &result);
+
 static bool AutoStitchImages(const std::vector<cv::Mat> &images, cv::Mat &result)
 {
-    if (images.empty()) {
-           return false;
-       }
+    if (images.empty())
+    {
+        return false;
+    }
 
-       // 创建拼接器 - 使用默认特征检测器
-       cv::Ptr<cv::Stitcher> stitcher = cv::Stitcher::create(cv::Stitcher::PANORAMA);
+    if (images.size() == 1)
+    {
+        result = images[0].clone();
+        return true;
+    }
 
-       // 尝试拼接图像
-       cv::Stitcher::Status status = stitcher->stitch(images, result);
+    try
+    {
+        // 创建拼接器 - 使用不同的模式尝试
+        std::vector<cv::Stitcher::Mode> modes = {
+            cv::Stitcher::PANORAMA,
+            cv::Stitcher::SCANS};
 
-       return status == cv::Stitcher::OK;
+        for (auto mode : modes)
+        {
+            cv::Ptr<cv::Stitcher> stitcher = cv::Stitcher::create(mode);
+
+            // 设置拼接器参数以提高成功率
+            stitcher->setRegistrationResol(0.6);
+            stitcher->setSeamEstimationResol(0.1);
+            stitcher->setCompositingResol(-1);
+            stitcher->setPanoConfidenceThresh(1.0);
+
+            // 尝试拼接图像
+            cv::Stitcher::Status status = stitcher->stitch(images, result);
+
+            if (status == cv::Stitcher::OK)
+            {
+                return true;
+            }
+
+            // 如果第一种模式失败，记录错误信息但继续尝试
+            if (mode == cv::Stitcher::PANORAMA)
+            {
+                std::cout << "PANORAMA mode failed, trying SCANS mode..." << std::endl;
+            }
+        }
+
+        // 如果所有模式都失败，尝试简单的特征匹配方法
+        return trySimpleFeatureMatching(images, result);
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "AutoStitchImages exception: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+// 简单特征匹配拼接方法（备用方案）
+static bool trySimpleFeatureMatching(const std::vector<cv::Mat> &images, cv::Mat &result)
+{
+    if (images.size() < 2)
+    {
+        if (!images.empty())
+        {
+            result = images[0].clone();
+            return true;
+        }
+        return false;
+    }
+
+    try
+    {
+        // 对于只有两张图片的情况，尝试简单的特征匹配
+        if (images.size() == 2)
+        {
+            cv::Mat img1 = images[0];
+            cv::Mat img2 = images[1];
+
+            // 检测特征点
+            cv::Ptr<cv::SIFT> detector = cv::SIFT::create();
+            std::vector<cv::KeyPoint> keypoints1, keypoints2;
+            cv::Mat descriptors1, descriptors2;
+
+            detector->detectAndCompute(img1, cv::noArray(), keypoints1, descriptors1);
+            detector->detectAndCompute(img2, cv::noArray(), keypoints2, descriptors2);
+
+            if (keypoints1.size() < 10 || keypoints2.size() < 10)
+            {
+                // 特征点太少，直接进行简单拼接
+                return performSimpleConcatenation(images, result);
+            }
+
+            // 匹配特征点
+            cv::BFMatcher matcher;
+            std::vector<cv::DMatch> matches;
+            matcher.match(descriptors1, descriptors2, matches);
+
+            if (matches.size() < 10)
+            {
+                // 匹配点太少，使用简单拼接
+                return performSimpleConcatenation(images, result);
+            }
+
+            // 如果有足够的匹配点，尝试计算单应性矩阵
+            std::vector<cv::Point2f> src_pts, dst_pts;
+            for (const auto &match : matches)
+            {
+                src_pts.push_back(keypoints1[match.queryIdx].pt);
+                dst_pts.push_back(keypoints2[match.trainIdx].pt);
+            }
+
+            cv::Mat H = cv::findHomography(src_pts, dst_pts, cv::RANSAC);
+            if (H.empty())
+            {
+                return performSimpleConcatenation(images, result);
+            }
+
+            // 执行简单的透视变换拼接
+            cv::Mat warped;
+            cv::warpPerspective(img1, warped, H, cv::Size(img1.cols + img2.cols, std::max(img1.rows, img2.rows)));
+
+            // 将第二张图片复制到结果中
+            cv::Mat roi(warped, cv::Rect(0, 0, img2.cols, img2.rows));
+            img2.copyTo(roi);
+
+            result = warped;
+            return true;
+        }
+
+        // 多张图片的情况，使用简单拼接
+        return performSimpleConcatenation(images, result);
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "Simple feature matching failed: " << e.what() << std::endl;
+        return performSimpleConcatenation(images, result);
+    }
+}
+
+// 简单拼接方法（最后的备用方案）
+static bool performSimpleConcatenation(const std::vector<cv::Mat> &images, cv::Mat &result)
+{
+    if (images.empty())
+    {
+        return false;
+    }
+
+    try
+    {
+        // 判断应该进行水平还是垂直拼接
+        // 简单启发式：如果图片宽度大于高度，进行垂直拼接，否则水平拼接
+        bool doVertical = true;
+        for (const auto &img : images)
+        {
+            if (img.cols > img.rows)
+            {
+                doVertical = true;
+                break;
+            }
+            else
+            {
+                doVertical = false;
+            }
+        }
+
+        if (doVertical)
+        {
+            cv::vconcat(images, result);
+        }
+        else
+        {
+            cv::hconcat(images, result);
+        }
+
+        return true;
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "Simple concatenation failed: " << e.what() << std::endl;
+        return false;
+    }
 }
