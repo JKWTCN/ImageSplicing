@@ -817,7 +817,7 @@ void MainWindow::on_pushButton_save_clicked()
     if (!scene || scene->items().isEmpty())
         return;
 
-    // 只计算图片项目的边界矩形，忽略拼接线
+    // 只计算图片项目的有效显示边界矩形（考虑拼接线裁剪），忽略拼接线
     QRectF boundingRect;
     bool hasImageItems = false;
     for (auto item : scene->items())
@@ -825,14 +825,55 @@ void MainWindow::on_pushButton_save_clicked()
         // 只考虑MovablePixmapItem类型的项目
         if (MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item))
         {
+            // 计算图片项的有效显示区域（考虑拼接线的裁剪）
+            QRectF itemRect = pixmapItem->boundingRect();
+            QPointF itemPos = pixmapItem->pos();
+            QRectF clipRect = itemRect;
+
+            if (pixmapItem->getMoveType() == MV_V)
+            {
+                // 垂直拼接模式：考虑上下拼接线的裁剪
+                if (pixmapItem->getTopSplicingLine())
+                {
+                    qreal lineY = pixmapItem->getTopSplicingLine()->line().y1();
+                    qreal localTopY = lineY - itemPos.y();
+                    clipRect.setTop(qMax(itemRect.top(), localTopY));
+                }
+                if (pixmapItem->getBottomSplicingLine())
+                {
+                    qreal lineY = pixmapItem->getBottomSplicingLine()->line().y1();
+                    qreal localBottomY = lineY - itemPos.y();
+                    clipRect.setBottom(qMin(itemRect.bottom(), localBottomY));
+                }
+            }
+            else if (pixmapItem->getMoveType() == MV_H)
+            {
+                // 水平拼接模式：考虑左右拼接线的裁剪
+                if (pixmapItem->getLeftSplicingLine())
+                {
+                    qreal lineX = pixmapItem->getLeftSplicingLine()->line().x1();
+                    qreal localLeftX = lineX - itemPos.x();
+                    clipRect.setLeft(qMax(itemRect.left(), localLeftX));
+                }
+                if (pixmapItem->getRightSplicingLine())
+                {
+                    qreal lineX = pixmapItem->getRightSplicingLine()->line().x1();
+                    qreal localRightX = lineX - itemPos.x();
+                    clipRect.setRight(qMin(itemRect.right(), localRightX));
+                }
+            }
+
+            // 将裁剪后的矩形转换到场景坐标系
+            QRectF effectiveRect = clipRect.translated(itemPos);
+
             if (!hasImageItems)
             {
-                boundingRect = pixmapItem->boundingRect().translated(pixmapItem->pos());
+                boundingRect = effectiveRect;
                 hasImageItems = true;
             }
             else
             {
-                boundingRect = boundingRect.united(pixmapItem->boundingRect().translated(pixmapItem->pos()));
+                boundingRect = boundingRect.united(effectiveRect);
             }
         }
     }

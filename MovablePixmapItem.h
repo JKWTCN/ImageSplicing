@@ -17,6 +17,13 @@ public:
     // 设置相邻的拼接线
     void setLeftSplicingLine(SplicingLine *line) { leftSplicingLine = line; }
     void setRightSplicingLine(SplicingLine *line) { rightSplicingLine = line; }
+
+    // 获取相邻的拼接线
+    SplicingLine *getTopSplicingLine() const { return topSplicingLine; }
+    SplicingLine *getBottomSplicingLine() const { return bottomSplicingLine; }
+    SplicingLine *getLeftSplicingLine() const { return leftSplicingLine; }
+    SplicingLine *getRightSplicingLine() const { return rightSplicingLine; }
+
     Move_Type getMoveType() { return this->moveType; }
     // 设置和获取初始中心点坐标
     void setInitialPos(const QPointF &center) { initialCenter = center; }
