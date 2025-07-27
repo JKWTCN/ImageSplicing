@@ -36,22 +36,17 @@ private slots:
     void upImagePosition();
     void downImagePosition();
     void deleteImagePosition();
+    void on_action_about_triggered();
     void on_setting_action_triggered();
     void on_pushButton_horizontalSplicing_clicked();
     void on_pushButton_verticalSplicing_clicked();
     void on_pushButton_save_clicked();
     void on_pushButton_auto_clicked();
-
     void on_pushButton_LayerUp_clicked();
-
     void on_pushButton_LayerDown_clicked();
-
     void on_pushButton_copy_clicked();
-
     void on_pushButton_add_clicked();
-
     void on_pushButton_editSelect_clicked();
-
     void on_pushButton_editResult_clicked();
     bool eventFilter(QObject *obj, QEvent *event); // 事件过滤器
 protected:

@@ -34,6 +34,10 @@ private:
     void moveElementsBelow(qreal currentBottomY, qreal deltaY);
     // 移动当前元素上方的所有元素（作为整体移动）
     void moveElementsAbove(qreal currentTopY, qreal deltaY);
+    // 移动当前元素左侧的所有元素（作为整体移动）
+    void moveElementsLeft(qreal currentLeftX, qreal deltaX);
+    // 移动当前元素右侧的所有元素（作为整体移动）
+    void moveElementsRight(qreal currentRightX, qreal deltaX);
     SplicingLine *topSplicingLine = nullptr;    // 上方的拼接线
     SplicingLine *bottomSplicingLine = nullptr; // 下方的拼接线
     SplicingLine *leftSplicingLine = nullptr;   // 左侧的拼接线

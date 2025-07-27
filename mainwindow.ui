@@ -270,7 +270,7 @@
     <property name="title">
      <string>关于</string>
     </property>
-    <addaction name="action_ImageSplicing"/>
+    <addaction name="action_about"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -280,9 +280,9 @@
     <string>首选项</string>
    </property>
   </action>
-  <action name="action_ImageSplicing">
+  <action name="action_about">
    <property name="text">
-    <string>关于ImageSplicing</string>
+    <string>关于拼好图</string>
    </property>
   </action>
  </widget>
@@ -295,8 +295,8 @@
    <slot>openFilesBtnPress()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>76</x>
-     <y>64</y>
+     <x>89</x>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>6</x>
@@ -311,8 +311,8 @@
    <slot>upImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1208</x>
-     <y>59</y>
+     <x>809</x>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>503</x>
@@ -327,8 +327,8 @@
    <slot>downImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1208</x>
-     <y>125</y>
+     <x>809</x>
+     <y>74</y>
     </hint>
     <hint type="destinationlabel">
      <x>426</x>
@@ -343,8 +343,8 @@
    <slot>deleteImagePosition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1208</x>
-     <y>92</y>
+     <x>264</x>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>316</x>

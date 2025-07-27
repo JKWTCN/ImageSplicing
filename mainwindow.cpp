@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->pushButton_editSelect->setVisible(false);
+    ui->pushButton_editResult->setVisible(false);
     if (GetSplicingTypeConfig() != ST_RAW)
         SetPaddingColorTypeConfig(PT_TRANSPARENT);
 }
@@ -153,6 +155,7 @@ void MainWindow::deleteImagePosition()
     UpdateQListWidget();
     ReFreshResultWidget();
 }
+
 // 打开设置界面
 void MainWindow::on_setting_action_triggered()
 {
@@ -162,6 +165,10 @@ void MainWindow::on_setting_action_triggered()
     settingWindow->show();
     settingWindow->activateWindow(); // 激活窗口并获取焦点
     settingWindow->raise();
+}
+// 打开关于界面
+void MainWindow::on_action_about_triggered()
+{
 }
 
 // 解锁图片调整按钮
