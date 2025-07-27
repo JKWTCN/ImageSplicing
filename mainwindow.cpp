@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
     // todo 等待优化功能
     ui->pushButton_editSelect->setVisible(false);
     ui->pushButton_editResult->setVisible(false);
-    ui->pushButton_auto->setEnabled(false);
+    ui->pushButton_auto->setVisible(false);
     if (GetSplicingTypeConfig() != ST_RAW)
         SetPaddingColorTypeConfig(PT_TRANSPARENT);
 
