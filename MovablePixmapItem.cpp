@@ -48,9 +48,34 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (topSplicingLine && bottomSplicingLine)
             {
+                // 检查是否为边界拼接线（没有关联的上一个或下一个图片项）
+                bool isTopBoundary = (topSplicingLine->getLastItem() == nullptr);
+                bool isBottomBoundary = (bottomSplicingLine->getNextItem() == nullptr);
 
+                // 如果上拼接线是边界线（第一张图片前的拼接线）
+                if (isTopBoundary && topSplicingLine->isHighlighted())
+                {
+                    qDebug() << getInitialCenter() << "第一张图片上移:边界上拼接线" << endl;
+                    if (!(currentBottomY + deltaY >= topSplicingLine->line().y1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素下方的所有元素作为整体
+                    moveElementsBelow(deltaY);
+                }
+                // 如果下拼接线是边界线（最后一张图片后的拼接线）
+                else if (isBottomBoundary && bottomSplicingLine->isHighlighted())
+                {
+                    qDebug() << getInitialCenter() << "最后一张图片上移:边界下拼接线" << endl;
+                    if (!(currentBottomY + deltaY >= bottomSplicingLine->line().y1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素上方的所有元素作为整体
+                    moveElementsAbove(deltaY);
+                }
                 // 如果是该元素的上拼接线
-                if (topSplicingLine->isHighlighted())
+                else if (topSplicingLine->isHighlighted())
                 {
                     qDebug() << getInitialCenter() << "中间图片上移:上拼接线" << endl;
                     if (!(currentBottomY + deltaY >= topSplicingLine->line().y1()))
@@ -76,6 +101,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                 }
             }
         }
+
         // 下移，更新上方所有元素位置
         else if (deltaY > 0)
         {
@@ -97,8 +123,33 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
             }
             else if (topSplicingLine && bottomSplicingLine)
             {
+                // 检查是否为边界拼接线（没有关联的上一个或下一个图片项）
+                bool isTopBoundary = (topSplicingLine->getLastItem() == nullptr);
+                bool isBottomBoundary = (bottomSplicingLine->getNextItem() == nullptr);
 
-                if (topSplicingLine->isHighlighted())
+                // 如果上拼接线是边界线（第一张图片前的拼接线）
+                if (isTopBoundary && topSplicingLine->isHighlighted())
+                {
+                    qDebug() << getInitialCenter() << "第一张图片下移:边界上拼接线" << endl;
+                    if (!(currentTopY + deltaY <= topSplicingLine->line().y1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素下方的所有元素作为整体
+                    moveElementsBelow(deltaY);
+                }
+                // 如果下拼接线是边界线（最后一张图片后的拼接线）
+                else if (isBottomBoundary && bottomSplicingLine->isHighlighted())
+                {
+                    qDebug() << getInitialCenter() << "最后一张图片下移:边界下拼接线" << endl;
+                    if (!(currentTopY + deltaY <= bottomSplicingLine->line().y1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素上方的所有元素作为整体
+                    moveElementsAbove(deltaY);
+                }
+                else if (topSplicingLine->isHighlighted())
                 {
                     qDebug() << getInitialCenter() << "中间图片下移:上拼接线" << endl;
                     if (!(currentTopY + deltaY <= topSplicingLine->line().y1()))
@@ -122,6 +173,7 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         }
         return newPos;
     }
+
     else if (change == ItemPositionChange && scene() && getMoveType() == MV_H)
     {
         // 只允许水平移动，保持Y坐标不变
@@ -136,8 +188,35 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         {
             if (rightSplicingLine && leftSplicingLine)
             {
+                // 检查是否为边界拼接线（没有关联的上一个或下一个图片项）
+                bool isLeftBoundary = (leftSplicingLine->getLastItem() == nullptr);
+                bool isRightBoundary = (rightSplicingLine->getNextItem() == nullptr);
 
-                if (leftSplicingLine->isHighlighted())
+                // 如果左拼接线是边界线（第一张图片前的拼接线）
+                if (isLeftBoundary && leftSplicingLine->isHighlighted())
+                {
+                    qDebug() << "第一张图片左移:边界左拼接线" << endl;
+                    // 获取当前元素的右边界X坐标
+                    if (!(currentRightX + deltaX >= leftSplicingLine->line().x1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素右侧的所有元素作为整体
+                    moveElementsRight(deltaX);
+                }
+                // 如果右拼接线是边界线（最后一张图片后的拼接线）
+                else if (isRightBoundary && rightSplicingLine->isHighlighted())
+                {
+                    qDebug() << "最后一张图片左移:边界右拼接线" << endl;
+                    // 获取当前元素的右边界X坐标
+                    if (!(currentRightX + deltaX >= rightSplicingLine->line().x1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素左侧的所有元素作为整体
+                    moveElementsLeft(deltaX);
+                }
+                else if (leftSplicingLine->isHighlighted())
                 {
                     qDebug() << "中间图片左移:左拼接线" << endl;
                     // 获取当前元素的右边界X坐标
@@ -184,8 +263,33 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
         {
             if (rightSplicingLine && leftSplicingLine)
             {
+                // 检查是否为边界拼接线（没有关联的上一个或下一个图片项）
+                bool isLeftBoundary = (leftSplicingLine->getLastItem() == nullptr);
+                bool isRightBoundary = (rightSplicingLine->getNextItem() == nullptr);
 
-                if (leftSplicingLine->isHighlighted())
+                // 如果左拼接线是边界线（第一张图片前的拼接线）
+                if (isLeftBoundary && leftSplicingLine->isHighlighted())
+                {
+                    qDebug() << "第一张图片右移:边界左拼接线" << endl;
+                    if (!(currentLeftX + deltaX <= leftSplicingLine->line().x1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素右侧的所有元素作为整体
+                    moveElementsRight(deltaX);
+                }
+                // 如果右拼接线是边界线（最后一张图片后的拼接线）
+                else if (isRightBoundary && rightSplicingLine->isHighlighted())
+                {
+                    qDebug() << "最后一张图片右移:边界右拼接线" << endl;
+                    if (!(currentLeftX + deltaX <= rightSplicingLine->line().x1()))
+                    {
+                        return oldPos;
+                    }
+                    // 移动当前元素左侧的所有元素作为整体
+                    moveElementsLeft(deltaX);
+                }
+                else if (leftSplicingLine->isHighlighted())
                 {
                     qDebug() << "中间图片右移:左拼接线" << endl;
                     if (!(currentLeftX + deltaX <= leftSplicingLine->line().x1()))
@@ -206,26 +310,26 @@ QVariant MovablePixmapItem::itemChange(GraphicsItemChange change, const QVariant
                     moveElementsLeft(deltaX);
                 }
             }
-            else if (!rightSplicingLine && leftSplicingLine)
+        }
+        else if (!rightSplicingLine && leftSplicingLine)
+        {
+            qDebug() << "最右边图片右移" << endl;
+            if (!(currentLeftX + deltaX <= leftSplicingLine->line().x1()))
             {
-                qDebug() << "最右边图片右移" << endl;
-                if (!(currentLeftX + deltaX <= leftSplicingLine->line().x1()))
-                {
-                    return oldPos;
-                }
+                return oldPos;
             }
-            else if (rightSplicingLine && !leftSplicingLine)
+        }
+        else if (rightSplicingLine && !leftSplicingLine)
+        {
+            qDebug() << "最左边图片右移" << endl;
+            if (!(currentLeftX + deltaX <= rightSplicingLine->line().x1()))
             {
-
-                qDebug() << "最左边图片右移" << endl;
-                if (!(currentLeftX + deltaX <= rightSplicingLine->line().x1()))
-                {
-                    return oldPos;
-                }
+                return oldPos;
             }
         }
         return newPos;
     }
+
     return QGraphicsPixmapItem::itemChange(change, value);
 }
 void MovablePixmapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

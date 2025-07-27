@@ -59,8 +59,8 @@ private:
     QColor m_highlightColor;
     QColor m_extensionColor;
     // 拼接线对应的两端图片
-    MovablePixmapItem *lastItem;
-    MovablePixmapItem *nextItem;
+    MovablePixmapItem *lastItem = nullptr;
+    MovablePixmapItem *nextItem = nullptr;
     // 初始中心点坐标
     QPointF m_initialCenter;
 };

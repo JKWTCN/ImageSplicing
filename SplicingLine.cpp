@@ -27,8 +27,14 @@ void SplicingLine::setHighlighted(bool highlighted)
 {
     if (m_highlighted != highlighted)
     {
-        lastItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
-        nextItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
+        if (lastItem != nullptr)
+        {
+            lastItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
+        }
+        if (nextItem != nullptr)
+        {
+            nextItem->setFlag(QGraphicsItem::ItemIsMovable, highlighted);
+        }
         m_highlighted = highlighted;
         updatePen();
         update();

@@ -315,6 +315,27 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         xPos += pixmap.width() + horizontalSpacing;
     }
 
+    // 添加第一张图片前的拼接线
+    if (!imageItems.isEmpty())
+    {
+        MovablePixmapItem *firstItem = imageItems[0];
+        qreal lineX = firstItem->pos().x();                                      // 在第一张图片左侧
+        qreal lineY1 = firstItem->pos().y() - 30;                                // 向上扩展30像素
+        qreal lineY2 = firstItem->pos().y() + firstItem->pixmap().height() + 30; // 向下扩展30像素
+
+        // 创建第一张图片左侧的拼接线
+        SplicingLine *leftSplicingLine = new SplicingLine(lineX, lineY1, lineX, lineY2,
+                                                          SplicingLineOrientation::Vertical);
+        leftSplicingLine->setExtensionLength(30);
+        leftSplicingLine->setLineWidth(2.0, 8.0);
+        leftSplicingLine->setZValue(1);
+        scene->addItem(leftSplicingLine);
+
+        // 设置第一张图片的左拼接线
+        firstItem->setLeftSplicingLine(leftSplicingLine);
+        leftSplicingLine->setNextItem(firstItem);
+    }
+
     // 在相邻图片之间添加拼接线
     for (int i = 0; i < imageItems.size() - 1; i++)
     {
@@ -341,6 +362,27 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
         nextItem->setLeftSplicingLine(splicingLine);     // 下一个图片的左拼接线
         splicingLine->setLastItem(currentItem);
         splicingLine->setNextItem(nextItem);
+    }
+
+    // 添加最后一张图片后的拼接线
+    if (!imageItems.isEmpty())
+    {
+        MovablePixmapItem *lastItem = imageItems.last();
+        qreal lineX = lastItem->pos().x() + lastItem->pixmap().width();        // 在最后一张图片右侧处
+        qreal lineY1 = lastItem->pos().y() - 30;                               // 向上扩展30像素
+        qreal lineY2 = lastItem->pos().y() + lastItem->pixmap().height() + 30; // 向下扩展30像素
+
+        // 创建最后一张图片右侧的拼接线
+        SplicingLine *rightSplicingLine = new SplicingLine(lineX, lineY1, lineX, lineY2,
+                                                           SplicingLineOrientation::Vertical);
+        rightSplicingLine->setExtensionLength(30);
+        rightSplicingLine->setLineWidth(2.0, 8.0);
+        rightSplicingLine->setZValue(1);
+        scene->addItem(rightSplicingLine);
+
+        // 设置最后一张图片的右拼接线
+        lastItem->setRightSplicingLine(rightSplicingLine);
+        rightSplicingLine->setLastItem(lastItem);
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
@@ -468,6 +510,27 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         yPos += pixmap.height() + verticalSpacing;
     }
 
+    // 添加第一张图片前的拼接线
+    if (!imageItems.isEmpty())
+    {
+        MovablePixmapItem *firstItem = imageItems[0];
+        qreal lineY = firstItem->pos().y();                                     // 在第一张图片上方
+        qreal lineX1 = firstItem->pos().x() - 30;                               // 向左扩展30像素
+        qreal lineX2 = firstItem->pos().x() + firstItem->pixmap().width() + 30; // 向右扩展30像素
+
+        // 创建第一张图片上方的拼接线
+        SplicingLine *topSplicingLine = new SplicingLine(lineX1, lineY, lineX2, lineY,
+                                                         SplicingLineOrientation::Horizontal);
+        topSplicingLine->setExtensionLength(30);
+        topSplicingLine->setLineWidth(2.0, 8.0);
+        topSplicingLine->setZValue(1);
+        scene->addItem(topSplicingLine);
+
+        // 设置第一张图片的上拼接线
+        firstItem->setTopSplicingLine(topSplicingLine);
+        topSplicingLine->setNextItem(firstItem);
+    }
+
     // 在相邻图片之间添加拼接线
     for (int i = 0; i < imageItems.size() - 1; i++)
     {
@@ -494,6 +557,27 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
         nextItem->setTopSplicingLine(splicingLine);       // 下一个图片的上拼接线
         splicingLine->setLastItem(currentItem);
         splicingLine->setNextItem(nextItem);
+    }
+
+    // 添加最后一张图片后的拼接线
+    if (!imageItems.isEmpty())
+    {
+        MovablePixmapItem *lastItem = imageItems.last();
+        qreal lineY = lastItem->pos().y() + lastItem->pixmap().height();      // 在最后一张图片下方
+        qreal lineX1 = lastItem->pos().x() - 30;                              // 向左扩展30像素
+        qreal lineX2 = lastItem->pos().x() + lastItem->pixmap().width() + 30; // 向右扩展30像素
+
+        // 创建最后一张图片下方的拼接线
+        SplicingLine *bottomSplicingLine = new SplicingLine(lineX1, lineY, lineX2, lineY,
+                                                            SplicingLineOrientation::Horizontal);
+        bottomSplicingLine->setExtensionLength(30);
+        bottomSplicingLine->setLineWidth(2.0, 8.0);
+        bottomSplicingLine->setZValue(1);
+        scene->addItem(bottomSplicingLine);
+
+        // 设置最后一张图片的下拼接线
+        lastItem->setBottomSplicingLine(bottomSplicingLine);
+        bottomSplicingLine->setLastItem(lastItem);
     }
     ui->pushButton_auto->setEnabled(true);
     ui->pushButton_save->setEnabled(true);
