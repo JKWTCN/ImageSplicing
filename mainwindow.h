@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QDragMoveEvent>
 #include <QMimeData>
 #include <QUrl>
 
@@ -64,5 +65,6 @@ protected:
     // void wheelEvent(QWheelEvent *event) override; // 重写滚轮事件
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
 };
 #endif // MAINWINDOW_H

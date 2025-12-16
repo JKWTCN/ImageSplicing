@@ -34,6 +34,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 启用拖放功能
     setAcceptDrops(true);
+    // 让 graphicsView_result 的视口也接受拖放并安装事件过滤器
+    if (ui->graphicsView_result && ui->graphicsView_result->viewport())
+    {
+        ui->graphicsView_result->viewport()->setAcceptDrops(true);
+        ui->graphicsView_result->viewport()->installEventFilter(this);
+    }
 }
 
 MainWindow::~MainWindow()
@@ -750,6 +756,7 @@ void MainWindow::on_pushButton_auto_clicked()
 // 事件过滤器
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    // Handle zooming via graphics scene wheel
     if (event->type() == QEvent::GraphicsSceneWheel)
     {
         ui->graphicsView_result->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
@@ -770,6 +777,28 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
         event->accept();
         return true;
+    }
+    // If the event comes from the graphics view viewport, forward drag/drop events
+    if (obj == ui->graphicsView_result->viewport())
+    {
+        if (event->type() == QEvent::DragEnter)
+        {
+            QDragEnterEvent *dragEvent = static_cast<QDragEnterEvent *>(event);
+            this->dragEnterEvent(dragEvent);
+            return true;
+        }
+        else if (event->type() == QEvent::DragMove)
+        {
+            QDragMoveEvent *moveEvent = static_cast<QDragMoveEvent *>(event);
+            this->dragMoveEvent(moveEvent);
+            return true;
+        }
+        else if (event->type() == QEvent::Drop)
+        {
+            QDropEvent *dropEv = static_cast<QDropEvent *>(event);
+            this->dropEvent(dropEv);
+            return true;
+        }
     }
     return false;
 }
@@ -1053,6 +1082,28 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
     {
         event->ignore();
     }
+}
+
+void MainWindow::dragMoveEvent(QDragMoveEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+    {
+        QStringList supportedFormats = {"jpg", "jpeg", "png", "bmp", "gif", "tif", "tiff", "ico"};
+        foreach (const QUrl &url, event->mimeData()->urls())
+        {
+            if (url.isLocalFile())
+            {
+                QString filePath = url.toLocalFile();
+                QString suffix = QFileInfo(filePath).suffix().toLower();
+                if (supportedFormats.contains(suffix))
+                {
+                    event->acceptProposedAction();
+                    return;
+                }
+            }
+        }
+    }
+    event->ignore();
 }
 
 // 拖拽放下事件
