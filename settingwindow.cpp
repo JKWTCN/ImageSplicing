@@ -14,6 +14,7 @@ SettingWindow::SettingWindow(QWidget *parent) : QDialog(parent),
     ui->comboBox_narrowType->setCurrentIndex(static_cast<int>(GetNarrowTypeConfig()));
     ui->comboBox_shrinkType->setCurrentIndex(static_cast<int>(GetShrinkTypeConfig()));
     ui->comboBox_featureExtraction->setCurrentIndex(static_cast<int>(GetFeatureExtractionConfig()));
+    ui->comboBox_fileSort->setCurrentIndex(static_cast<int>(GetFileSortTypeConfig()));
     ui->spinBox_jpg_quality->setValue(GetJpgQualityConfig());
     connect(ui->buttonBox, &QDialogButtonBox::accepted, this, [this]()
             {
@@ -25,6 +26,7 @@ SettingWindow::SettingWindow(QWidget *parent) : QDialog(parent),
         SetNarrowTypeConfig(static_cast<InterpolationType>(ui->comboBox_narrowType->currentIndex()));
         SetShrinkTypeConfig(static_cast<InterpolationType>(ui->comboBox_shrinkType->currentIndex()));
         SetFeatureExtractionConfig(static_cast<FeatureExtraction>(ui->comboBox_featureExtraction->currentIndex()));
+        SetFileSortTypeConfig(static_cast<FileSortType>(ui->comboBox_fileSort->currentIndex()));
         SetJpgQualityConfig(int(ui->spinBox_jpg_quality->value()));
 
         this->close(); });

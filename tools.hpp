@@ -1,5 +1,6 @@
 #include <string>
 #include <QString>
+#include "enumerate.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -8,6 +9,9 @@
 #include <QSettings>
 #include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
+#include <QRegularExpression>
+#include <algorithm>
 
 using namespace std;
 
@@ -116,4 +120,111 @@ static QStringList OpenImagePaths()
     }
 
     return filePaths;
+}
+
+// 辅助函数：从文件名中提取所有数字
+static QVector<int> ExtractNumbers(const QString &str)
+{
+    QVector<int> numbers;
+    QRegularExpression re("(\\d+)");
+    QRegularExpressionMatchIterator i = re.globalMatch(str);
+
+    while (i.hasNext())
+    {
+        QRegularExpressionMatch match = i.next();
+        numbers.append(match.captured(1).toInt());
+    }
+
+    return numbers;
+}
+
+// 辅助函数：从文件名中提取最后一个数字（主要排序依据）
+static int ExtractLastNumber(const QString &str)
+{
+    QVector<int> numbers = ExtractNumbers(str);
+    return numbers.isEmpty() ? 0 : numbers.last();
+}
+
+// 文件排序函数
+static QStringList SortFilePaths(const QStringList &filePaths, FileSortType sortType)
+{
+    if (sortType == FST_IMPORT_ORDER || filePaths.isEmpty())
+    {
+        return filePaths; // 导入顺序，不做排序
+    }
+
+    QStringList sortedPaths = filePaths;
+
+    if (sortType == FST_ASCENDING)
+    {
+        // 顺序排序：从小到大 (59, 60, 61)
+        std::sort(sortedPaths.begin(), sortedPaths.end(), [](const QString &a, const QString &b) {
+            QFileInfo fileA(a);
+            QFileInfo fileB(b);
+            QString baseNameA = fileA.baseName(); // 不包含扩展名的文件名
+            QString baseNameB = fileB.baseName();
+
+            // 提取所有数字
+            QVector<int> numbersA = ExtractNumbers(baseNameA);
+            QVector<int> numbersB = ExtractNumbers(baseNameB);
+
+            // 如果都有数字，逐个比较
+            if (!numbersA.isEmpty() && !numbersB.isEmpty())
+            {
+                int compareCount = qMin(numbersA.size(), numbersB.size());
+                for (int i = 0; i < compareCount; ++i)
+                {
+                    if (numbersA[i] != numbersB[i])
+                    {
+                        // 顺序：小的数字排前面
+                        return numbersA[i] > numbersB[i];
+                    }
+                }
+                // 如果前面的数字都相同，数字数量少的优先
+                return numbersA.size() < numbersB.size();
+            }
+            else
+            {
+                // 如果没有找到数字或只有一个有数字，则按字符串比较
+                return a.compare(b, Qt::CaseInsensitive) < 0;
+            }
+        });
+    }
+    else if (sortType == FST_DESCENDING)
+    {
+        // 倒序排序：从大到小 (61, 60, 59)
+        std::sort(sortedPaths.begin(), sortedPaths.end(), [](const QString &a, const QString &b) {
+            QFileInfo fileA(a);
+            QFileInfo fileB(b);
+            QString baseNameA = fileA.baseName();
+            QString baseNameB = fileB.baseName();
+
+            // 提取所有数字
+            QVector<int> numbersA = ExtractNumbers(baseNameA);
+            QVector<int> numbersB = ExtractNumbers(baseNameB);
+
+            // 如果都有数字，逐个比较
+            if (!numbersA.isEmpty() && !numbersB.isEmpty())
+            {
+                int compareCount = qMin(numbersA.size(), numbersB.size());
+                for (int i = 0; i < compareCount; ++i)
+                {
+                    if (numbersA[i] != numbersB[i])
+                    {
+                        // 倒序：大的数字排前面
+                        return numbersA[i] < numbersB[i];
+                    }
+                }
+                // 如果前面的数字都相同，数字数量多的优先（倒序）
+                return numbersA.size() > numbersB.size();
+            }
+            else
+            {
+                // 如果没有找到数字或只有一个有数字，则按字符串比较
+                return a.compare(b, Qt::CaseInsensitive) > 0;
+            }
+        });
+    }
+
+    return sortedPaths;
 }

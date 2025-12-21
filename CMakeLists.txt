@@ -48,8 +48,8 @@ add_executable(ImageSplicing
 
 # --- Generate version resource from template ---
 set(MAJOR 1)
-set(MINOR 0)
-set(PATCH 1)
+set(MINOR 1)
+set(PATCH 0)
 
 configure_file(${CMAKE_SOURCE_DIR}/version.rc.in ${CMAKE_BINARY_DIR}/version.rc @ONLY)
 

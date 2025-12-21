@@ -137,3 +137,16 @@ static void SetJpgQualityConfig(int jpgQuality)
     QSettings settings("iCloudWar", "ImageSplicing");
     settings.setValue("JpgQuality", jpgQuality);
 }
+
+static FileSortType GetFileSortTypeConfig()
+{
+    QSettings settings("iCloudWar", "ImageSplicing");
+    FileSortType fileSortType = FileSortType(settings.value("FileSortType", FST_IMPORT_ORDER).toInt());
+    return fileSortType;
+}
+
+static void SetFileSortTypeConfig(FileSortType fileSortType)
+{
+    QSettings settings("iCloudWar", "ImageSplicing");
+    settings.setValue("FileSortType", fileSortType);
+}

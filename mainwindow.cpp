@@ -107,6 +107,10 @@ void MainWindow::openFilesBtnPress()
         // showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
         return;
     }
+
+    // 应用文件排序
+    filePaths = SortFilePaths(filePaths, GetFileSortTypeConfig());
+
     if (GetOpenReverseConfig())
     {
         QStringList tmp = filePaths;
@@ -221,6 +225,10 @@ void MainWindow::on_pushButton_horizontalSplicing_clicked()
     {
 
         filePaths = OpenImagePaths();
+
+        // 应用文件排序
+        filePaths = SortFilePaths(filePaths, GetFileSortTypeConfig());
+
         if (GetOpenReverseConfig())
         {
             QStringList tmp = filePaths;
@@ -432,6 +440,10 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     {
 
         filePaths = OpenImagePaths();
+
+        // 应用文件排序
+        filePaths = SortFilePaths(filePaths, GetFileSortTypeConfig());
+
         if (GetOpenReverseConfig())
         {
             QStringList tmp = filePaths;
@@ -1022,6 +1034,10 @@ void MainWindow::on_pushButton_add_clicked()
         //            showInfoMessageBox("提示", "拼接图片列表为空,请打开图片。");
         return;
     }
+
+    // 应用文件排序
+    tmp_filePaths = SortFilePaths(tmp_filePaths, GetFileSortTypeConfig());
+
     if (GetOpenReverseConfig())
     {
         QStringList tmp = tmp_filePaths;
@@ -1139,6 +1155,9 @@ void MainWindow::dropEvent(QDropEvent *event)
             scene->installEventFilter(this);
             ui->pushButton_auto->setEnabled(false);
         }
+
+        // 应用文件排序
+        droppedFiles = SortFilePaths(droppedFiles, GetFileSortTypeConfig());
 
         // 应用反向配置
         if (GetOpenReverseConfig())

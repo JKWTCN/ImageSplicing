@@ -66,6 +66,14 @@ enum FeatureExtraction
     FE_ORB
 };
 
+// 文件排序方式
+enum FileSortType
+{
+    FST_IMPORT_ORDER,  // 导入顺序
+    FST_ASCENDING,     // 顺序（从小到大）
+    FST_DESCENDING     // 倒序（从大到小）
+};
+
 // 目前的拼接状态
 enum SplicingState
 {

@@ -29,6 +29,36 @@
     </widget>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_fileSort">
+     <item>
+      <widget class="QLabel" name="label_fileSort">
+       <property name="text">
+        <string>文件名排序</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBox_fileSort">
+       <item>
+        <property name="text">
+         <string>导入顺序</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>顺序</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>倒序</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_10">
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
