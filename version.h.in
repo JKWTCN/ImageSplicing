@@ -1,0 +1,6 @@
+#pragma once
+
+#define APP_VERSION_MAJOR @MAJOR@
+#define APP_VERSION_MINOR @MINOR@
+#define APP_VERSION_PATCH @PATCH@
+#define APP_VERSION_STRING "@MAJOR@.@MINOR@.@PATCH@"

@@ -51,6 +51,9 @@ set(MAJOR 1)
 set(MINOR 1)
 set(PATCH 0)
 
+# Generate version header file
+configure_file(${CMAKE_SOURCE_DIR}/version.h.in ${CMAKE_BINARY_DIR}/version.h @ONLY)
+
 configure_file(${CMAKE_SOURCE_DIR}/version.rc.in ${CMAKE_BINARY_DIR}/version.rc @ONLY)
 
 target_sources(ImageSplicing PRIVATE ${CMAKE_BINARY_DIR}/version.rc)
@@ -72,7 +75,7 @@ target_link_libraries(ImageSplicing PRIVATE
     Qt5::Widgets
     ${OpenCV_LIBS}
 )
-target_include_directories(ImageSplicing PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(ImageSplicing PRIVATE ${OpenCV_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
 # 复制可执行文件到bin目录（确保在不同构建配置下都能工作）
 add_custom_command(TARGET ImageSplicing POST_BUILD
