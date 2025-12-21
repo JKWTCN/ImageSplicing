@@ -48,7 +48,7 @@ add_executable(ImageSplicing
 
 # --- Generate version resource from template ---
 set(MAJOR 1)
-set(MINOR 1)
+set(MINOR 2)
 set(PATCH 0)
 
 # Generate version header file

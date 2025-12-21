@@ -76,3 +76,4 @@ build/
 */build/
 CMakeLists.txt.user
 bin
+.calude

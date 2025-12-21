@@ -45,7 +45,27 @@ private:
     void createOptimizedHorizontalScene(QGraphicsScene *scene, const std::vector<cv::Mat> &images);
     // 智能自动拼接函数
     void performIntelligentAutoStitch();
-    cv::Mat performSmartStitching(const std::vector<cv::Mat> &images);
+    cv::Mat performSmartStitching(const std::vector<cv::Mat> &images, bool useVerticalStitching = false);
+    cv::Mat performDirectionalMultiStitching(const std::vector<cv::Mat> &images, bool useVerticalStitching);
+    std::pair<int, int> findBestStitchingPair(const std::vector<cv::Mat> &images, bool useVerticalStitching);
+    double evaluatePairCompatibility(const cv::Mat &img1, const cv::Mat &img2, bool useVerticalStitching);
+    double calculateContentSimilarity(const cv::Mat &img1, const cv::Mat &img2);
+    cv::Mat stitchPair(const cv::Mat &img1, const cv::Mat &img2, bool useVerticalStitching);
+    cv::Mat performSimpleDirectionalStitching(const std::vector<cv::Mat> &images, bool useVerticalStitching);
+    int calculateOptimalWidth(const std::vector<cv::Mat> &images);
+    int calculateOptimalHeight(const std::vector<cv::Mat> &images);
+    cv::Mat resizeToWidth(const cv::Mat &image, int targetWidth);
+    cv::Mat resizeToHeight(const cv::Mat &image, int targetHeight);
+    cv::Mat applyMandatoryEnhancement(const cv::Mat &image);
+    cv::Mat adjustToVertical(const cv::Mat &image);
+    cv::Mat adjustToHorizontal(const cv::Mat &image);
+    cv::Mat tryVerticalReorganization(const cv::Mat &image);
+    cv::Mat tryHorizontalReorganization(const cv::Mat &image);
+    cv::Mat tryIntelligentDirectionAdjustment(const cv::Mat &image, bool preferVertical);
+    cv::Mat trySmartCropping(const cv::Mat &image, bool preferVertical);
+    cv::Mat tryContentAwareResize(const cv::Mat &image, bool preferVertical);
+    cv::Mat trySegmentReorganization(const cv::Mat &image, bool preferVertical);
+    cv::Mat enhanceStitchedImage(const cv::Mat &image);
     void createAutoStitchScene(QGraphicsScene *scene, const cv::Mat &stitchedResult);
 private slots:
     void openFilesBtnPress();
@@ -62,6 +82,7 @@ private slots:
     void on_pushButton_LayerDown_clicked();
     void on_pushButton_copy_clicked();
     void on_pushButton_add_clicked();
+    void on_pushButton_deleteAll_clicked();
     void on_pushButton_editSelect_clicked();
     void on_pushButton_editResult_clicked();
     bool eventFilter(QObject *obj, QEvent *event); // 事件过滤器

@@ -203,6 +203,7 @@ void MainWindow::UnlockPostionButton()
     ui->pushButton_7->setEnabled(true);
     ui->pushButton_copy->setEnabled(true);
     ui->pushButton_add->setEnabled(true);
+    ui->pushButton_deleteAll->setEnabled(true);
     ui->pushButton_editResult->setEnabled(true);
     ui->pushButton_editSelect->setEnabled(true);
 }
@@ -215,6 +216,7 @@ void MainWindow::LockPostionButton()
     ui->pushButton_7->setEnabled(false);
     ui->pushButton_copy->setEnabled(false);
     ui->pushButton_add->setEnabled(false);
+    ui->pushButton_deleteAll->setEnabled(false);
     ui->pushButton_editResult->setEnabled(false);
     ui->pushButton_editSelect->setEnabled(false);
 }
@@ -714,8 +716,9 @@ void MainWindow::performIntelligentAutoStitch()
             return;
         }
 
-        // 执行智能拼接
-        cv::Mat stitchedResult = performSmartStitching(images);
+        // 执行智能拼接，根据用户之前的选择决定拼接方向
+        bool useVerticalStitching = (splicingState == SS_VERTICAL);
+        cv::Mat stitchedResult = performSmartStitching(images, useVerticalStitching);
 
         if (stitchedResult.empty())
         {
@@ -735,8 +738,22 @@ void MainWindow::performIntelligentAutoStitch()
         scene->setSceneRect(scene->itemsBoundingRect());
         ui->graphicsView_result->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
 
-        // 更新状态
-        splicingState = SS_AUTO_HORIZONTAL; // 自动拼接通常产生横向结果
+        // 根据用户之前选择的拼接模式来决定自动调整的方向
+        // 如果之前选择了垂直拼接，自动调整也使用垂直拼接
+        // 如果之前选择了水平拼接，自动调整也使用水平拼接
+        if (splicingState == SS_VERTICAL)
+        {
+            splicingState = SS_AUTO_VERTICAL;
+        }
+        else if (splicingState == SS_HORIZONTAL)
+        {
+            splicingState = SS_AUTO_HORIZONTAL;
+        }
+        else
+        {
+            // 如果没有之前的选择，默认使用垂直拼接
+            splicingState = SS_AUTO_VERTICAL;
+        }
         ui->pushButton_save->setEnabled(true);
 
         showNoticeMessageBox("成功", "智能自动拼接完成！\n提示：使用Ctrl+滚轮可以缩放查看结果。");
@@ -759,7 +776,7 @@ void MainWindow::performIntelligentAutoStitch()
 }
 
 // 执行智能拼接算法
-cv::Mat MainWindow::performSmartStitching(const std::vector<cv::Mat> &images)
+cv::Mat MainWindow::performSmartStitching(const std::vector<cv::Mat> &images, bool useVerticalStitching)
 {
     if (images.empty())
     {
@@ -771,134 +788,68 @@ cv::Mat MainWindow::performSmartStitching(const std::vector<cv::Mat> &images)
         return images[0].clone();
     }
 
-    // 首先尝试使用OpenCV的Stitcher进行高质量拼接
-    cv::Mat result;
-    if (AutoStitchImages(images, result))
-    {
-        return result;
-    }
-
-    // 如果Stitcher失败，尝试改进的特征匹配方法
     try
     {
-        // 创建特征检测器
-        cv::Ptr<cv::SIFT> detector = cv::SIFT::create();
+        cv::Mat result;
 
-        // 对每张图片进行预处理
-        std::vector<cv::Mat> processedImages;
-        for (const auto &img : images)
+        // 对于多张图片的情况，优先使用智能配对拼接策略
+        if (images.size() > 2)
         {
-            cv::Mat processed;
+            std::cout << "Processing " << images.size() << " images using smart multi-image strategy..." << std::endl;
 
-            // 如果图片太大，进行缩放
-            if (img.cols > 2000 || img.rows > 2000)
-            {
-                double scale = std::min(2000.0 / img.cols, 2000.0 / img.rows);
-                cv::resize(img, processed, cv::Size(), scale, scale, cv::INTER_AREA);
-            }
-            else
-            {
-                processed = img.clone();
-            }
+            // 使用分步拼接策略，保持用户指定的方向
+            result = performDirectionalMultiStitching(images, useVerticalStitching);
 
-            processedImages.push_back(processed);
+            if (!result.empty())
+            {
+                std::cout << "Multi-image directional stitching successful!" << std::endl;
+                return result;
+            }
+        }
+        else if (images.size() == 2)
+        {
+            // 对于两张图片，可以尝试智能拼接
+            std::cout << "Processing 2 images, trying intelligent stitching..." << std::endl;
+
+            if (AutoStitchImages(images, result))
+            {
+                // 检查方向是否符合用户期望
+                bool directionCorrect = (useVerticalStitching && result.rows >= result.cols) ||
+                                      (!useVerticalStitching && result.cols >= result.rows);
+
+                if (directionCorrect)
+                {
+                    std::cout << "Two-image intelligent stitching successful with correct direction!" << std::endl;
+                    return result;
+                }
+                else
+                {
+                    std::cout << "Direction mismatch, falling back to directional stitching..." << std::endl;
+                }
+            }
         }
 
-        // 尝试简单的两两拼接
-        cv::Mat currentResult = processedImages[0];
+        // 对于失败的情况或多图方向不对，使用定向拼接
+        std::cout << "Using directional stitching as fallback..." << std::endl;
 
-        for (size_t i = 1; i < processedImages.size(); ++i)
+        if (useVerticalStitching)
         {
-            cv::Mat nextImg = processedImages[i];
-
-            // 提取特征点
-            std::vector<cv::KeyPoint> keypoints1, keypoints2;
-            cv::Mat descriptors1, descriptors2;
-
-            detector->detectAndCompute(currentResult, cv::noArray(), keypoints1, descriptors1);
-            detector->detectAndCompute(nextImg, cv::noArray(), keypoints2, descriptors2);
-
-            if (keypoints1.size() < 10 || keypoints2.size() < 10)
-            {
-                // 特征点太少，使用简单拼接
-                cv::hconcat(currentResult, nextImg, currentResult);
-                continue;
-            }
-
-            // 匹配特征点
-            cv::BFMatcher matcher(cv::NORM_L2);
-            std::vector<cv::DMatch> matches;
-            matcher.match(descriptors1, descriptors2, matches);
-
-            if (matches.size() < 10)
-            {
-                // 匹配点太少，使用简单拼接
-                cv::hconcat(currentResult, nextImg, currentResult);
-                continue;
-            }
-
-            // 筛选好的匹配点
-            std::sort(matches.begin(), matches.end());
-            std::vector<cv::DMatch> goodMatches(matches.begin(), matches.begin() + std::min(50, (int)matches.size()));
-
-            // 获取匹配点坐标
-            std::vector<cv::Point2f> src_pts, dst_pts;
-            for (const auto &match : goodMatches)
-            {
-                src_pts.push_back(keypoints1[match.queryIdx].pt);
-                dst_pts.push_back(keypoints2[match.trainIdx].pt);
-            }
-
-            // 计算单应性矩阵
-            cv::Mat H = cv::findHomography(src_pts, dst_pts, cv::RANSAC, 5.0);
-
-            if (H.empty())
-            {
-                // 无法计算单应性矩阵，使用简单拼接
-                cv::hconcat(currentResult, nextImg, currentResult);
-                continue;
-            }
-
-            // 执行透视变换
-            cv::Mat warped;
-            int warpWidth = currentResult.cols + nextImg.cols;
-            int warpHeight = std::max(currentResult.rows, nextImg.rows);
-
-            cv::warpPerspective(currentResult, warped, H, cv::Size(warpWidth, warpHeight));
-
-            // 将下一张图片融合到结果中
-            cv::Mat roi(warped, cv::Rect(0, 0, nextImg.cols, nextImg.rows));
-            nextImg.copyTo(roi);
-
-            currentResult = warped;
+            return performEnhancedVerticalStitching(images);
         }
-
-        return currentResult;
+        else
+        {
+            return performEnhancedHorizontalStitching(images);
+        }
     }
     catch (const cv::Exception &e)
     {
-        std::cerr << "智能拼接异常: " << e.what() << std::endl;
+        std::cerr << "performSmartStitching exception: " << e.what() << std::endl;
 
-        // 最后的备用方案：简单拼接
+        // 最后的备用方案：基础拼接
         try
         {
             cv::Mat simpleResult;
-
-            // 判断拼接方向
-            bool doVertical = true;
-            int totalWidth = 0, totalHeight = 0;
-
-            for (const auto &img : images)
-            {
-                totalWidth += img.cols;
-                totalHeight += img.rows;
-            }
-
-            // 如果平均宽度大于平均高度，进行垂直拼接
-            double avgWidth = (double)totalWidth / images.size();
-            double avgHeight = (double)totalHeight / images.size();
-
-            if (avgWidth > avgHeight)
+            if (useVerticalStitching)
             {
                 cv::vconcat(images, simpleResult);
             }
@@ -906,7 +857,6 @@ cv::Mat MainWindow::performSmartStitching(const std::vector<cv::Mat> &images)
             {
                 cv::hconcat(images, simpleResult);
             }
-
             return simpleResult;
         }
         catch (...)
@@ -916,40 +866,995 @@ cv::Mat MainWindow::performSmartStitching(const std::vector<cv::Mat> &images)
     }
 }
 
+// 多图片定向拼接函数
+cv::Mat MainWindow::performDirectionalMultiStitching(const std::vector<cv::Mat> &images, bool useVerticalStitching)
+{
+    if (images.empty())
+    {
+        return cv::Mat();
+    }
+
+    if (images.size() == 1)
+    {
+        return images[0].clone();
+    }
+
+    try
+    {
+        std::cout << "Starting tournament-style multi-stitching with " << images.size() << " images" << std::endl;
+
+        // 渐进式两两拼接策略
+        std::vector<cv::Mat> currentImages = images;
+
+        // 持续进行两两拼接，直到只剩一张图片
+        while (currentImages.size() > 1)
+        {
+            std::cout << "Round with " << currentImages.size() << " images" << std::endl;
+
+            // 找到最适合拼接的一对
+            auto bestPair = findBestStitchingPair(currentImages, useVerticalStitching);
+
+            if (bestPair.first == -1 || bestPair.second == -1)
+            {
+                // 如果找不到合适的配对，使用简单拼接
+                std::cout << "No suitable pair found, using simple concatenation" << std::endl;
+                return performSimpleDirectionalStitching(currentImages, useVerticalStitching);
+            }
+
+            // 拼接最佳配对
+            cv::Mat stitchedPair = stitchPair(currentImages[bestPair.first],
+                                            currentImages[bestPair.second],
+                                            useVerticalStitching);
+
+            if (stitchedPair.empty())
+            {
+                // 如果拼接失败，移除这张图片继续
+                std::cout << "Pair stitching failed, removing one image" << std::endl;
+                currentImages.erase(currentImages.begin() + bestPair.first);
+                continue;
+            }
+
+            std::cout << "Successfully stitched images " << bestPair.first << " and " << bestPair.second << std::endl;
+
+            // 创建新的图片列表
+            std::vector<cv::Mat> nextRoundImages;
+
+            // 添加未拼接的图片（从后往前添加避免索引变化）
+            for (int i = currentImages.size() - 1; i >= 0; --i)
+            {
+                if (i != bestPair.first && i != bestPair.second)
+                {
+                    nextRoundImages.insert(nextRoundImages.begin(), currentImages[i]);
+                }
+            }
+
+            // 添加拼接结果
+            nextRoundImages.push_back(stitchedPair);
+
+            // 更新当前图片列表
+            currentImages = nextRoundImages;
+        }
+
+        std::cout << "Tournament stitching completed successfully!" << std::endl;
+
+        // 不应用增强，保持原始颜色
+        if (!currentImages.empty())
+        {
+            return currentImages[0];
+        }
+
+        return cv::Mat();
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "Tournament multi-stitching exception: " << e.what() << std::endl;
+
+        // 备用方案：简单拼接
+        return performSimpleDirectionalStitching(images, useVerticalStitching);
+    }
+}
+
+// 找到最适合拼接的一对图片
+std::pair<int, int> MainWindow::findBestStitchingPair(const std::vector<cv::Mat> &images, bool useVerticalStitching)
+{
+    if (images.size() < 2)
+    {
+        return std::make_pair(-1, -1);
+    }
+
+    std::pair<int, int> bestPair = std::make_pair(0, 1);
+    double bestScore = -1.0;
+
+    std::cout << "Evaluating " << (images.size() * (images.size() - 1) / 2) << " possible pairs..." << std::endl;
+
+    // 遍历所有可能的配对
+    for (size_t i = 0; i < images.size(); ++i)
+    {
+        for (size_t j = i + 1; j < images.size(); ++j)
+        {
+            // 计算这对图片的拼接适应性评分
+            double score = evaluatePairCompatibility(images[i], images[j], useVerticalStitching);
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestPair = std::make_pair(i, j);
+            }
+        }
+    }
+
+    std::cout << "Best pair found: (" << bestPair.first << ", " << bestPair.second
+              << ") with score: " << bestScore << std::endl;
+
+    // 如果评分太低，返回无效配对
+    if (bestScore < 0.3)
+    {
+        return std::make_pair(-1, -1);
+    }
+
+    return bestPair;
+}
+
+// 评估两张图片的拼接适应性
+double MainWindow::evaluatePairCompatibility(const cv::Mat &img1, const cv::Mat &img2, bool useVerticalStitching)
+{
+    if (img1.empty() || img2.empty())
+    {
+        return 0.0;
+    }
+
+    try
+    {
+        double score = 0.0;
+
+        // 1. 尺寸兼容性评分
+        double sizeScore = 0.0;
+        if (useVerticalStitching)
+        {
+            // 垂直拼接：宽度应该相似
+            double widthRatio = std::min(img1.cols, img2.cols) /
+                              static_cast<double>(std::max(img1.cols, img2.cols));
+            sizeScore = widthRatio;
+        }
+        else
+        {
+            // 水平拼接：高度应该相似
+            double heightRatio = std::min(img1.rows, img2.rows) /
+                               static_cast<double>(std::max(img1.rows, img2.rows));
+            sizeScore = heightRatio;
+        }
+
+        score += sizeScore * 0.3; // 权重30%
+
+        // 2. 智能拼接成功性评分（尝试快速拼接）
+        double stitchingScore = 0.0;
+        std::vector<cv::Mat> testPair = {img1, img2};
+        cv::Mat testResult;
+
+        // 创建小尺寸版本进行快速测试
+        cv::Mat smallImg1, smallImg2;
+        cv::resize(img1, smallImg1, cv::Size(), 0.3, 0.3, cv::INTER_AREA);
+        cv::resize(img2, smallImg2, cv::Size(), 0.3, 0.3, cv::INTER_AREA);
+
+        std::vector<cv::Mat> smallPair = {smallImg1, smallImg2};
+
+        if (AutoStitchImages(smallPair, testResult))
+        {
+            // 检查方向是否符合要求
+            bool directionCorrect = (useVerticalStitching && testResult.rows >= testResult.cols) ||
+                                  (!useVerticalStitching && testResult.cols >= testResult.rows);
+
+            stitchingScore = directionCorrect ? 1.0 : 0.5;
+        }
+        else
+        {
+            // 智能拼接失败，给较低分数
+            stitchingScore = 0.2;
+        }
+
+        score += stitchingScore * 0.5; // 权重50%
+
+        // 3. 内容相似性评分（简单的直方图比较）
+        double similarityScore = calculateContentSimilarity(img1, img2);
+        score += similarityScore * 0.2; // 权重20%
+
+        return std::min(score, 1.0); // 限制在0-1范围内
+    }
+    catch (...)
+    {
+        return 0.1; // 异常情况下给很低的分数
+    }
+}
+
+// 计算内容相似性
+double MainWindow::calculateContentSimilarity(const cv::Mat &img1, const cv::Mat &img2)
+{
+    try
+    {
+        // 转换为HSV颜色空间进行更好的比较
+        cv::Mat hsv1, hsv2;
+        cv::cvtColor(img1, hsv1, cv::COLOR_BGR2HSV);
+        cv::cvtColor(img2, hsv2, cv::COLOR_BGR2HSV);
+
+        // 计算直方图
+        int histSize[] = {50, 60};
+        float h_ranges[] = {0, 180};
+        float s_ranges[] = {0, 256};
+        const float* ranges[] = {h_ranges, s_ranges};
+        int channels[] = {0, 1};
+
+        cv::Mat hist1, hist2;
+        cv::calcHist(&hsv1, 1, channels, cv::Mat(), hist1, 2, histSize, ranges);
+        cv::calcHist(&hsv2, 1, channels, cv::Mat(), hist2, 2, histSize, ranges);
+
+        // 归一化
+        cv::normalize(hist1, hist1, 0, 1, cv::NORM_L1);
+        cv::normalize(hist2, hist2, 0, 1, cv::NORM_L1);
+
+        // 计算相关性
+        double correlation = cv::compareHist(hist1, hist2, cv::HISTCMP_CORREL);
+
+        // 转换为0-1分数
+        return (correlation + 1.0) / 2.0;
+    }
+    catch (...)
+    {
+        return 0.5; // 异常情况下返回中等相似性
+    }
+}
+
+// 拼接一对图片
+cv::Mat MainWindow::stitchPair(const cv::Mat &img1, const cv::Mat &img2, bool useVerticalStitching)
+{
+    try
+    {
+        std::vector<cv::Mat> pair = {img1, img2};
+        cv::Mat result;
+
+        // 首先尝试智能拼接
+        if (AutoStitchImages(pair, result))
+        {
+            // 检查方向是否符合要求
+            bool directionCorrect = (useVerticalStitching && result.rows >= result.cols) ||
+                                  (!useVerticalStitching && result.cols >= result.rows);
+
+            if (directionCorrect)
+            {
+                return result;
+            }
+        }
+
+        // 智能拼接失败或方向不对，使用简单拼接
+        if (useVerticalStitching)
+        {
+            cv::vconcat(pair, result);
+        }
+        else
+        {
+            cv::hconcat(pair, result);
+        }
+
+        return result;
+    }
+    catch (...)
+    {
+        return cv::Mat();
+    }
+}
+
+// 简单定向拼接（备用方案）
+cv::Mat MainWindow::performSimpleDirectionalStitching(const std::vector<cv::Mat> &images, bool useVerticalStitching)
+{
+    try
+    {
+        cv::Mat result;
+
+        // 统一尺寸
+        std::vector<cv::Mat> normalizedImages;
+
+        if (useVerticalStitching)
+        {
+            int targetWidth = calculateOptimalWidth(images);
+            if (targetWidth > 0)
+            {
+                for (const auto& img : images)
+                {
+                    cv::Mat resized = resizeToWidth(img, targetWidth);
+                    if (!resized.empty())
+                    {
+                        normalizedImages.push_back(resized);
+                    }
+                }
+            }
+        }
+        else
+        {
+            int targetHeight = calculateOptimalHeight(images);
+            if (targetHeight > 0)
+            {
+                for (const auto& img : images)
+                {
+                    cv::Mat resized = resizeToHeight(img, targetHeight);
+                    if (!resized.empty())
+                    {
+                        normalizedImages.push_back(resized);
+                    }
+                }
+            }
+        }
+
+        if (normalizedImages.empty())
+        {
+            normalizedImages = images;
+        }
+
+        // 简单拼接
+        if (useVerticalStitching)
+        {
+            cv::vconcat(normalizedImages, result);
+        }
+        else
+        {
+            cv::hconcat(normalizedImages, result);
+        }
+
+        return result;
+    }
+    catch (...)
+    {
+        return cv::Mat();
+    }
+}
+
+// 计算最优统一宽度
+int MainWindow::calculateOptimalWidth(const std::vector<cv::Mat> &images)
+{
+    if (images.empty())
+    {
+        return 0;
+    }
+
+    try
+    {
+        // 计算所有图片宽度的中位数，避免极端值影响
+        std::vector<int> widths;
+        for (const auto& img : images)
+        {
+            if (!img.empty())
+            {
+                widths.push_back(img.cols);
+            }
+        }
+
+        if (widths.empty())
+        {
+            return 0;
+        }
+
+        // 排序并找到中位数
+        std::sort(widths.begin(), widths.end());
+        int medianWidth = widths[widths.size() / 2];
+
+        // 限制最大宽度以避免过度缩放
+        int maxWidth = *std::max_element(widths.begin(), widths.end());
+        int minWidth = *std::min_element(widths.begin(), widths.end());
+
+        // 选择一个合理的宽度，偏向较小值以减少放大操作
+        int optimalWidth = medianWidth;
+        if (medianWidth > maxWidth * 0.8)
+        {
+            optimalWidth = maxWidth * 0.8; // 不超过最大宽度的80%
+        }
+        if (optimalWidth < minWidth * 1.2)
+        {
+            optimalWidth = minWidth * 1.2; // 不小于最小宽度的120%
+        }
+
+        std::cout << "Calculated optimal width: " << optimalWidth << " (median: " << medianWidth << ")" << std::endl;
+        return optimalWidth;
+    }
+    catch (...)
+    {
+        return images[0].cols; // 返回第一张图的宽度作为备用
+    }
+}
+
+// 计算最优统一高度
+int MainWindow::calculateOptimalHeight(const std::vector<cv::Mat> &images)
+{
+    if (images.empty())
+    {
+        return 0;
+    }
+
+    try
+    {
+        // 计算所有图片高度的中位数
+        std::vector<int> heights;
+        for (const auto& img : images)
+        {
+            if (!img.empty())
+            {
+                heights.push_back(img.rows);
+            }
+        }
+
+        if (heights.empty())
+        {
+            return 0;
+        }
+
+        // 排序并找到中位数
+        std::sort(heights.begin(), heights.end());
+        int medianHeight = heights[heights.size() / 2];
+
+        // 限制最大高度以避免过度缩放
+        int maxHeight = *std::max_element(heights.begin(), heights.end());
+        int minHeight = *std::min_element(heights.begin(), heights.end());
+
+        // 选择一个合理的高度，偏向较小值
+        int optimalHeight = medianHeight;
+        if (optimalHeight > maxHeight * 0.8)
+        {
+            optimalHeight = maxHeight * 0.8;
+        }
+        if (optimalHeight < minHeight * 1.2)
+        {
+            optimalHeight = minHeight * 1.2;
+        }
+
+        std::cout << "Calculated optimal height: " << optimalHeight << " (median: " << medianHeight << ")" << std::endl;
+        return optimalHeight;
+    }
+    catch (...)
+    {
+        return images[0].rows; // 返回第一张图的高度作为备用
+    }
+}
+
+// 调整到指定宽度，保持高宽比
+cv::Mat MainWindow::resizeToWidth(const cv::Mat &image, int targetWidth)
+{
+    if (image.empty() || targetWidth <= 0)
+    {
+        return cv::Mat();
+    }
+
+    try
+    {
+        // 计算对应的高度以保持高宽比
+        double aspectRatio = static_cast<double>(image.rows) / image.cols;
+        int targetHeight = static_cast<int>(targetWidth * aspectRatio);
+
+        cv::Mat resized;
+        cv::resize(image, resized, cv::Size(targetWidth, targetHeight), 0, 0, cv::INTER_AREA);
+        return resized;
+    }
+    catch (...)
+    {
+        return image.clone();
+    }
+}
+
+// 调整到指定高度，保持高宽比
+cv::Mat MainWindow::resizeToHeight(const cv::Mat &image, int targetHeight)
+{
+    if (image.empty() || targetHeight <= 0)
+    {
+        return cv::Mat();
+    }
+
+    try
+    {
+        // 计算对应的宽度以保持高宽比
+        double aspectRatio = static_cast<double>(image.cols) / image.rows;
+        int targetWidth = static_cast<int>(targetHeight * aspectRatio);
+
+        cv::Mat resized;
+        cv::resize(image, resized, cv::Size(targetWidth, targetHeight), 0, 0, cv::INTER_AREA);
+        return resized;
+    }
+    catch (...)
+    {
+        return image.clone();
+    }
+}
+
+// 应用强制性轻微增强
+cv::Mat MainWindow::applyMandatoryEnhancement(const cv::Mat &image)
+{
+    if (image.empty())
+    {
+        return cv::Mat();
+    }
+
+    try
+    {
+        cv::Mat enhanced = image.clone();
+
+        // 应用非常轻微的对比度调整，避免过度处理
+        enhanced.convertTo(enhanced, -1, 1.02, 2); // 轻微增加对比度和亮度
+
+        // 轻微的锐化
+        cv::Mat sharpenKernel = (cv::Mat_<float>(3,3) <<
+                                 0, -0.5, 0,
+                                -0.5,  3, -0.5,
+                                 0, -0.5, 0);
+
+        cv::Mat sharpened;
+        cv::filter2D(enhanced, sharpened, -1, sharpenKernel);
+
+        // 只混合少量锐化效果
+        cv::addWeighted(enhanced, 0.85, sharpened, 0.15, 0, enhanced);
+
+        return enhanced;
+    }
+    catch (...)
+    {
+        return image.clone();
+    }
+}
+
+// 调整为垂直方向
+cv::Mat MainWindow::adjustToVertical(const cv::Mat &image)
+{
+    if (image.empty())
+    {
+        return cv::Mat();
+    }
+
+    try
+    {
+        // 如果图像已经很接近垂直，使用智能裁剪
+        if (image.rows >= image.cols * 0.8)
+        {
+            return trySmartCropping(image, true);
+        }
+
+        // 否则进行智能重排
+        return tryVerticalReorganization(image);
+    }
+    catch (...)
+    {
+        return image.clone();
+    }
+}
+
+// 调整为水平方向
+cv::Mat MainWindow::adjustToHorizontal(const cv::Mat &image)
+{
+    if (image.empty())
+    {
+        return cv::Mat();
+    }
+
+    try
+    {
+        // 如果图像已经很接近水平，使用智能裁剪
+        if (image.cols >= image.rows * 0.8)
+        {
+            return trySmartCropping(image, false);
+        }
+
+        // 否则进行智能重排
+        return tryHorizontalReorganization(image);
+    }
+    catch (...)
+    {
+        return image.clone();
+    }
+}
+
+// 垂直重组
+cv::Mat MainWindow::tryVerticalReorganization(const cv::Mat &image)
+{
+    try
+    {
+        // 将图像分成上下两部分，然后垂直排列
+        if (image.rows < 200 || image.cols < 100)
+        {
+            return cv::Mat(); // 图像太小
+        }
+
+        // 计算新的垂直尺寸
+        int newHeight = static_cast<int>(image.cols * 1.5); // 3:2 宽高比
+        if (newHeight > image.rows * 2)
+        {
+            newHeight = image.rows * 2; // 限制最大高度
+        }
+
+        // 创建目标画布
+        cv::Mat result = cv::Mat::zeros(newHeight, image.cols, image.type());
+
+        // 将原图像分成2-3部分，垂直排列
+        int parts = 2;
+        int partHeight = image.rows / parts;
+
+        for (int i = 0; i < parts; ++i)
+        {
+            int startY = i * partHeight;
+            int endY = (i == parts - 1) ? image.rows : startY + partHeight;
+            int targetY = i * (newHeight / parts);
+
+            cv::Rect srcRect(0, startY, image.cols, endY - startY);
+            cv::Rect dstRect(0, targetY, image.cols, newHeight / parts);
+
+            if (srcRect.x + srcRect.width <= image.cols &&
+                srcRect.y + srcRect.height <= image.rows &&
+                dstRect.x + dstRect.width <= result.cols &&
+                dstRect.y + dstRect.height <= result.rows)
+            {
+                cv::Mat srcSegment = image(srcRect);
+                cv::Mat dstSegment = result(dstRect);
+                cv::resize(srcSegment, dstSegment, dstSegment.size());
+            }
+        }
+
+        return result;
+    }
+    catch (...)
+    {
+        return cv::Mat();
+    }
+}
+
+// 水平重组
+cv::Mat MainWindow::tryHorizontalReorganization(const cv::Mat &image)
+{
+    try
+    {
+        // 将图像分成左右两部分，然后水平排列
+        if (image.cols < 200 || image.rows < 100)
+        {
+            return cv::Mat(); // 图像太小
+        }
+
+        // 计算新的水平尺寸
+        int newWidth = static_cast<int>(image.rows * 1.5); // 3:2 宽高比
+        if (newWidth > image.cols * 2)
+        {
+            newWidth = image.cols * 2; // 限制最大宽度
+        }
+
+        // 创建目标画布
+        cv::Mat result = cv::Mat::zeros(image.rows, newWidth, image.type());
+
+        // 将原图像分成2-3部分，水平排列
+        int parts = 2;
+        int partWidth = image.cols / parts;
+
+        for (int i = 0; i < parts; ++i)
+        {
+            int startX = i * partWidth;
+            int endX = (i == parts - 1) ? image.cols : startX + partWidth;
+            int targetX = i * (newWidth / parts);
+
+            cv::Rect srcRect(startX, 0, endX - startX, image.rows);
+            cv::Rect dstRect(targetX, 0, newWidth / parts, image.rows);
+
+            if (srcRect.x + srcRect.width <= image.cols &&
+                srcRect.y + srcRect.height <= image.rows &&
+                dstRect.x + dstRect.width <= result.cols &&
+                dstRect.y + dstRect.height <= result.rows)
+            {
+                cv::Mat srcSegment = image(srcRect);
+                cv::Mat dstSegment = result(dstRect);
+                cv::resize(srcSegment, dstSegment, dstSegment.size());
+            }
+        }
+
+        return result;
+    }
+    catch (...)
+    {
+        return cv::Mat();
+    }
+}
+
+// 智能方向调整函数
+cv::Mat MainWindow::tryIntelligentDirectionAdjustment(const cv::Mat &image, bool preferVertical)
+{
+    if (image.empty())
+    {
+        return cv::Mat();
+    }
+
+    try
+    {
+        // 如果图像已经符合期望的方向，直接返回
+        if (preferVertical && image.rows >= image.cols)
+        {
+            return image.clone();
+        }
+        if (!preferVertical && image.cols >= image.rows)
+        {
+            return image.clone();
+        }
+
+        std::cout << "Attempting intelligent direction adjustment..." << std::endl;
+
+        // 方法1: 尝试智能裁剪
+        cv::Mat croppedResult = trySmartCropping(image, preferVertical);
+        if (!croppedResult.empty())
+        {
+            std::cout << "Smart cropping successful!" << std::endl;
+            return croppedResult;
+        }
+
+        // 方法2: 尝试内容感知缩放
+        cv::Mat resizedResult = tryContentAwareResize(image, preferVertical);
+        if (!resizedResult.empty())
+        {
+            std::cout << "Content-aware resize successful!" << std::endl;
+            return resizedResult;
+        }
+
+        // 方法3: 分割重组
+        cv::Mat reorganizedResult = trySegmentReorganization(image, preferVertical);
+        if (!reorganizedResult.empty())
+        {
+            std::cout << "Segment reorganization successful!" << std::endl;
+            return reorganizedResult;
+        }
+
+        std::cout << "All direction adjustment methods failed" << std::endl;
+        return cv::Mat();
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "Direction adjustment exception: " << e.what() << std::endl;
+        return cv::Mat();
+    }
+}
+
+// 智能裁剪辅助函数
+cv::Mat MainWindow::trySmartCropping(const cv::Mat &image, bool preferVertical)
+{
+    try
+    {
+        if (preferVertical)
+        {
+            // 如果希望垂直，尝试裁剪左右两侧，保持中间部分
+            int targetWidth = static_cast<int>(image.cols * 0.7); // 保留70%宽度
+            if (targetWidth <= 0) return cv::Mat();
+
+            int startX = (image.cols - targetWidth) / 2;
+            cv::Rect cropRect(startX, 0, targetWidth, image.rows);
+
+            if (cropRect.x >= 0 && cropRect.y >= 0 &&
+                cropRect.x + cropRect.width <= image.cols &&
+                cropRect.y + cropRect.height <= image.rows)
+            {
+                cv::Mat cropped = image(cropRect).clone();
+                if (cropped.rows >= cropped.cols)
+                {
+                    return cropped;
+                }
+            }
+        }
+        else
+        {
+            // 如果希望水平，尝试裁剪上下两侧，保持中间部分
+            int targetHeight = static_cast<int>(image.rows * 0.7); // 保留70%高度
+            if (targetHeight <= 0) return cv::Mat();
+
+            int startY = (image.rows - targetHeight) / 2;
+            cv::Rect cropRect(0, startY, image.cols, targetHeight);
+
+            if (cropRect.x >= 0 && cropRect.y >= 0 &&
+                cropRect.x + cropRect.width <= image.cols &&
+                cropRect.y + cropRect.height <= image.rows)
+            {
+                cv::Mat cropped = image(cropRect).clone();
+                if (cropped.cols >= cropped.rows)
+                {
+                    return cropped;
+                }
+            }
+        }
+
+        return cv::Mat();
+    }
+    catch (...)
+    {
+        return cv::Mat();
+    }
+}
+
+// 内容感知缩放辅助函数
+cv::Mat MainWindow::tryContentAwareResize(const cv::Mat &image, bool preferVertical)
+{
+    try
+    {
+        cv::Mat result;
+        double aspectRatio;
+
+        if (preferVertical)
+        {
+            // 创建垂直方向的结果
+            aspectRatio = 0.75; // 高宽比 3:4
+            int newWidth = static_cast<int>(image.rows * aspectRatio);
+            if (newWidth <= 0 || newWidth >= image.cols) return cv::Mat();
+
+            cv::resize(image, result, cv::Size(newWidth, image.rows), 0, 0, cv::INTER_AREA);
+        }
+        else
+        {
+            // 创建水平方向的结果
+            aspectRatio = 1.33; // 宽高比 4:3
+            int newHeight = static_cast<int>(image.cols / aspectRatio);
+            if (newHeight <= 0 || newHeight >= image.rows) return cv::Mat();
+
+            cv::resize(image, result, cv::Size(image.cols, newHeight), 0, 0, cv::INTER_AREA);
+        }
+
+        return result;
+    }
+    catch (...)
+    {
+        return cv::Mat();
+    }
+}
+
+// 分割重组辅助函数
+cv::Mat MainWindow::trySegmentReorganization(const cv::Mat &image, bool preferVertical)
+{
+    try
+    {
+        if (preferVertical)
+        {
+            // 尝试将横向图像分割为垂直方向的片段
+            int segments = 2;
+            int segmentWidth = image.cols / segments;
+
+            cv::Mat result = cv::Mat::zeros(image.rows, segmentWidth, image.type());
+
+            for (int i = 0; i < segments; ++i)
+            {
+                int startY = (image.rows / segments) * i;
+                int endY = (i == segments - 1) ? image.rows : startY + (image.rows / segments);
+
+                cv::Rect srcRect(0, startY, image.cols, endY - startY);
+                cv::Rect dstRect(0, startY, segmentWidth, endY - startY);
+
+                if (srcRect.x + srcRect.width <= image.cols &&
+                    srcRect.y + srcRect.height <= image.rows &&
+                    dstRect.x + dstRect.width <= result.cols &&
+                    dstRect.y + dstRect.height <= result.rows)
+                {
+                    cv::Mat srcSegment = image(srcRect);
+                    cv::resize(srcSegment, srcSegment, cv::Size(segmentWidth, endY - startY));
+                    cv::Mat dstSegment = result(dstRect);
+                    srcSegment.copyTo(dstSegment);
+                }
+            }
+
+            if (result.rows >= result.cols)
+            {
+                return result;
+            }
+        }
+
+        return cv::Mat();
+    }
+    catch (...)
+    {
+        return cv::Mat();
+    }
+}
+
 // 创建自动拼接场景
 void MainWindow::createAutoStitchScene(QGraphicsScene *scene, const cv::Mat &stitchedResult)
 {
     if (!scene || stitchedResult.empty())
         return;
 
-    // 将OpenCV的BGR格式转换为RGB格式
-    cv::Mat rgbImage;
-    if (stitchedResult.channels() == 3)
+    try
     {
-        cv::cvtColor(stitchedResult, rgbImage, cv::COLOR_BGR2RGB);
+        // 不进行质量增强，保持原始颜色
+        // 将OpenCV的BGR格式转换为RGB格式
+        cv::Mat rgbImage;
+        if (stitchedResult.channels() == 3)
+        {
+            cv::cvtColor(stitchedResult, rgbImage, cv::COLOR_BGR2RGB);
+        }
+        else
+        {
+            rgbImage = stitchedResult.clone();
+        }
+
+        // 创建QImage
+        QImage qimg(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step,
+                    rgbImage.channels() == 3 ? QImage::Format_RGB888 : QImage::Format_Grayscale8);
+
+        // 转换为QPixmap
+        QPixmap pixmap = QPixmap::fromImage(qimg);
+
+        // 创建可拖动的图片项（MV_NONE表示不可移动，因为这是最终结果）
+        MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V, 0, 0, 0);
+        item->setFlag(QGraphicsItem::ItemIsMovable, false); // 设为不可移动
+        item->setFlag(QGraphicsItem::ItemIsSelectable, true); // 可选择
+
+        scene->addItem(item);
+
+        // 居中显示并添加适当的边距
+        QRectF itemRect = item->boundingRect();
+        QRectF sceneRect = itemRect.adjusted(-10, -10, 10, 10); // 添加10像素边距
+        scene->setSceneRect(sceneRect);
+
+        std::cout << "Auto-stitch scene created successfully with original colors" << std::endl;
     }
-    else
+    catch (const cv::Exception &e)
     {
-        rgbImage = stitchedResult.clone();
+        std::cerr << "Error in createAutoStitchScene: " << e.what() << std::endl;
+    }
+}
+
+// 增强拼接图像质量
+cv::Mat MainWindow::enhanceStitchedImage(const cv::Mat &image)
+{
+    if (image.empty())
+    {
+        return cv::Mat();
     }
 
-    // 创建QImage
-    QImage qimg(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step,
-                rgbImage.channels() == 3 ? QImage::Format_RGB888 : QImage::Format_Grayscale8);
+    try
+    {
+        cv::Mat enhanced = image.clone();
 
-    // 转换为QPixmap
-    QPixmap pixmap = QPixmap::fromImage(qimg);
+        // 1. 应用对比度增强
+        cv::Mat labImage;
+        cv::cvtColor(enhanced, labImage, cv::COLOR_BGR2Lab);
 
-    // 创建可拖动的图片项（MV_NONE表示不可移动，因为这是最终结果）
-    MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V, 0, 0, 0);
-    item->setFlag(QGraphicsItem::ItemIsMovable, false); // 设为不可移动
-    item->setFlag(QGraphicsItem::ItemIsSelectable, true); // 可选择
+        std::vector<cv::Mat> labChannels;
+        cv::split(labImage, labChannels);
 
-    scene->addItem(item);
+        // 对亮度通道进行直方图均衡化
+        cv::equalizeHist(labChannels[0], labChannels[0]);
+        cv::merge(labChannels, labImage);
+        cv::cvtColor(labImage, enhanced, cv::COLOR_Lab2BGR);
 
-    // 居中显示
-    QRectF sceneRect = item->boundingRect();
-    scene->setSceneRect(sceneRect);
+        // 2. 应用轻微的锐化滤波
+        cv::Mat sharpenKernel = (cv::Mat_<float>(3,3) <<
+                                 0, -1, 0,
+                                -1,  5, -1,
+                                 0, -1, 0);
+
+        cv::Mat sharpened;
+        cv::filter2D(enhanced, sharpened, -1, sharpenKernel);
+
+        // 混合原图和锐化图，避免过度锐化
+        cv::addWeighted(enhanced, 0.7, sharpened, 0.3, 0, enhanced);
+
+        // 3. 应用双边滤波减少噪声但保持边缘
+        cv::Mat bilateral;
+        cv::bilateralFilter(enhanced, bilateral, 9, 80, 80);
+        enhanced = bilateral;
+
+        // 4. 调整亮度和对比度
+        enhanced.convertTo(enhanced, -1, 1.1, 10); // alpha=1.1 (对比度), beta=10 (亮度)
+
+        // 5. 应用轻微的伽马校正
+        cv::Mat gammaCorrected = enhanced.clone();
+        cv::Mat lookUpTable(1, 256, CV_8U);
+        uchar* p = lookUpTable.ptr();
+        float gamma = 0.9; // 略微增加对比度
+
+        for (int i = 0; i < 256; ++i)
+        {
+            p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, gamma) * 255.0);
+        }
+
+        cv::LUT(enhanced, lookUpTable, gammaCorrected);
+
+        std::cout << "Image enhancement applied successfully" << std::endl;
+        return gammaCorrected;
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "Image enhancement failed: " << e.what() << std::endl;
+        return image.clone(); // 返回原图
+    }
 }
 // 事件过滤器
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
@@ -1245,6 +2150,15 @@ void MainWindow::on_pushButton_editSelect_clicked()
 void MainWindow::on_pushButton_editResult_clicked()
 {
     //    int nowIndex = ui->listImageFilesWidget->currentRow();
+}
+
+void MainWindow::on_pushButton_deleteAll_clicked()
+{
+    ClearResult();
+    filePaths.clear();
+    images.clear();
+    UpdateQListWidget();
+    ui->pushButton_deleteAll->setEnabled(false);
 }
 
 // 拖拽进入事件
