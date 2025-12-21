@@ -43,6 +43,10 @@ private:
     bool performAutoAlignment(const std::vector<cv::Mat> &images, std::vector<cv::Mat> &optimizedImages);
     void createOptimizedVerticalScene(QGraphicsScene *scene, const std::vector<cv::Mat> &images);
     void createOptimizedHorizontalScene(QGraphicsScene *scene, const std::vector<cv::Mat> &images);
+    // 智能自动拼接函数
+    void performIntelligentAutoStitch();
+    cv::Mat performSmartStitching(const std::vector<cv::Mat> &images);
+    void createAutoStitchScene(QGraphicsScene *scene, const cv::Mat &stitchedResult);
 private slots:
     void openFilesBtnPress();
     void upImagePosition();

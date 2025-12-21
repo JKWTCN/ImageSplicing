@@ -28,7 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
     // todo 等待优化功能
     ui->pushButton_editSelect->setVisible(false);
     ui->pushButton_editResult->setVisible(false);
-    ui->pushButton_auto->setVisible(false);
+    // 自动拼接功能已实现，显示按钮
+    // ui->pushButton_auto->setVisible(false);
     if (GetSplicingTypeConfig() != ST_RAW)
         SetPaddingColorTypeConfig(PT_TRANSPARENT);
 
@@ -648,122 +649,307 @@ void MainWindow::on_pushButton_verticalSplicing_clicked()
     ui->graphicsView_result->setScene(scene); // 设置场景到 graphicsView
     scene->installEventFilter(this);
 }
-// 自动调整图像
+// 智能自动拼接功能
 void MainWindow::on_pushButton_auto_clicked()
 {
-    if (images.empty() || splicingState == SS_NONE)
+    // 检查是否有图片
+    if (filePaths.length() == 0)
     {
-        showNoticeMessageBox("提示", "请先进行图像拼接后再使用自动调整功能。");
-        return;
+        filePaths = OpenImagePaths();
+
+        if (filePaths.length() == 0)
+        {
+            showNoticeMessageBox("提示", "请先选择要拼接的图片。");
+            return;
+        }
+
+        // 应用文件排序
+        filePaths = SortFilePaths(filePaths, GetFileSortTypeConfig());
+
+        if (GetOpenReverseConfig())
+        {
+            QStringList tmp = filePaths;
+            for (int i = 0; i < tmp.length(); i++)
+            {
+                filePaths[i] = tmp[tmp.length() - i - 1];
+            }
+        }
+
+        UnlockPostionButton();
+        UpdateQListWidget();
     }
 
-    SplicingState originalState = splicingState;
+    // 执行智能自动拼接
+    performIntelligentAutoStitch();
+}
 
-    switch (splicingState)
+// 执行智能自动拼接的主函数
+void MainWindow::performIntelligentAutoStitch()
+{
+    if (filePaths.isEmpty())
     {
-    case SS_VERTICAL:
-        splicingState = SS_AUTO_VERTICAL;
-        break;
-    case SS_HORIZONTAL:
-        splicingState = SS_AUTO_HORIZONTAL;
-        break;
-    default:
-        break;
+        showErrorMessageBox("错误", "没有可用的图片文件。");
+        return;
     }
 
     try
     {
-        // 使用改进的自动调整算法，但保持拼接线显示
-        bool success = false;
-        std::vector<cv::Mat> optimizedImages;
-
-        // 首先尝试使用特征匹配进行图像优化
-        if (images.size() >= 2)
+        // 加载所有图片
+        images.clear();
+        for (const auto &path : filePaths)
         {
-            success = performAutoAlignment(images, optimizedImages);
+            cv::Mat img = cv::imread(path.toLocal8Bit().constData(), cv::IMREAD_COLOR);
+            if (img.empty())
+            {
+                cout << "Failed to load image:" << path.toLocal8Bit().constData();
+                showErrorMessageBox("错误", "不能读取文件: " + path.toStdString());
+                return;
+            }
+            images.push_back(img);
         }
 
-        // 如果自动对齐失败，使用原始图像
-        if (!success || optimizedImages.empty())
+        if (images.size() == 1)
         {
-            optimizedImages = images;
-            success = true;
+            showNoticeMessageBox("提示", "只有一张图片，无需拼接。");
+            return;
         }
 
-        // 根据拼接方向创建优化后的拼接场景
+        // 执行智能拼接
+        cv::Mat stitchedResult = performSmartStitching(images);
+
+        if (stitchedResult.empty())
+        {
+            showErrorMessageBox("错误", "自动拼接失败，请尝试手动拼接。");
+            return;
+        }
+
+        // 创建场景显示结果
         QGraphicsScene *scene = new QGraphicsScene(this);
-
-        if (splicingState == SS_AUTO_VERTICAL || originalState == SS_VERTICAL)
-        {
-            createOptimizedVerticalScene(scene, optimizedImages);
-        }
-        else if (splicingState == SS_AUTO_HORIZONTAL || originalState == SS_HORIZONTAL)
-        {
-            createOptimizedHorizontalScene(scene, optimizedImages);
-        }
-        else
-        {
-            // 默认使用垂直拼接
-            createOptimizedVerticalScene(scene, optimizedImages);
-        }
+        createAutoStitchScene(scene, stitchedResult);
 
         // 设置场景
         ui->graphicsView_result->setScene(scene);
         scene->installEventFilter(this);
 
-        // 获取场景边界并设置
-        if (!scene->items().isEmpty())
-        {
-            // 只计算图片项目的边界矩形，忽略拼接线
-            QRectF boundingRect;
-            bool hasImageItems = false;
-            for (auto item : scene->items())
-            {
-                // 只考虑MovablePixmapItem类型的项目
-                if (MovablePixmapItem *pixmapItem = dynamic_cast<MovablePixmapItem *>(item))
-                {
-                    if (!hasImageItems)
-                    {
-                        boundingRect = pixmapItem->boundingRect().translated(pixmapItem->pos());
-                        hasImageItems = true;
-                    }
-                    else
-                    {
-                        boundingRect = boundingRect.united(pixmapItem->boundingRect().translated(pixmapItem->pos()));
-                    }
-                }
-            }
+        // 设置场景边界并适应视图
+        scene->setSceneRect(scene->itemsBoundingRect());
+        ui->graphicsView_result->fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
 
-            if (!boundingRect.isNull() && hasImageItems)
-            {
-                scene->setSceneRect(boundingRect);
-                ui->graphicsView_result->fitInView(boundingRect, Qt::KeepAspectRatio);
-            }
-        }
-
-        ui->pushButton_auto->setEnabled(true);
+        // 更新状态
+        splicingState = SS_AUTO_HORIZONTAL; // 自动拼接通常产生横向结果
         ui->pushButton_save->setEnabled(true);
 
-        showNoticeMessageBox("提示", success ? "自动调整完成" : "使用原始图像完成拼接");
+        showNoticeMessageBox("成功", "智能自动拼接完成！\n提示：使用Ctrl+滚轮可以缩放查看结果。");
     }
     catch (cv::Exception &e)
     {
         std::cerr << "OpenCV异常: " << e.what() << std::endl;
         showErrorMessageBox("错误", "图像处理异常: " + std::string(e.what()));
-        splicingState = originalState;
     }
     catch (std::exception &e)
     {
         std::cerr << "标准异常: " << e.what() << std::endl;
         showErrorMessageBox("错误", "处理异常: " + std::string(e.what()));
-        splicingState = originalState;
     }
     catch (...)
     {
         std::cerr << "未知异常" << std::endl;
         showErrorMessageBox("错误", "发生未知异常");
-        splicingState = originalState;
     }
+}
+
+// 执行智能拼接算法
+cv::Mat MainWindow::performSmartStitching(const std::vector<cv::Mat> &images)
+{
+    if (images.empty())
+    {
+        return cv::Mat();
+    }
+
+    if (images.size() == 1)
+    {
+        return images[0].clone();
+    }
+
+    // 首先尝试使用OpenCV的Stitcher进行高质量拼接
+    cv::Mat result;
+    if (AutoStitchImages(images, result))
+    {
+        return result;
+    }
+
+    // 如果Stitcher失败，尝试改进的特征匹配方法
+    try
+    {
+        // 创建特征检测器
+        cv::Ptr<cv::SIFT> detector = cv::SIFT::create();
+
+        // 对每张图片进行预处理
+        std::vector<cv::Mat> processedImages;
+        for (const auto &img : images)
+        {
+            cv::Mat processed;
+
+            // 如果图片太大，进行缩放
+            if (img.cols > 2000 || img.rows > 2000)
+            {
+                double scale = std::min(2000.0 / img.cols, 2000.0 / img.rows);
+                cv::resize(img, processed, cv::Size(), scale, scale, cv::INTER_AREA);
+            }
+            else
+            {
+                processed = img.clone();
+            }
+
+            processedImages.push_back(processed);
+        }
+
+        // 尝试简单的两两拼接
+        cv::Mat currentResult = processedImages[0];
+
+        for (size_t i = 1; i < processedImages.size(); ++i)
+        {
+            cv::Mat nextImg = processedImages[i];
+
+            // 提取特征点
+            std::vector<cv::KeyPoint> keypoints1, keypoints2;
+            cv::Mat descriptors1, descriptors2;
+
+            detector->detectAndCompute(currentResult, cv::noArray(), keypoints1, descriptors1);
+            detector->detectAndCompute(nextImg, cv::noArray(), keypoints2, descriptors2);
+
+            if (keypoints1.size() < 10 || keypoints2.size() < 10)
+            {
+                // 特征点太少，使用简单拼接
+                cv::hconcat(currentResult, nextImg, currentResult);
+                continue;
+            }
+
+            // 匹配特征点
+            cv::BFMatcher matcher(cv::NORM_L2);
+            std::vector<cv::DMatch> matches;
+            matcher.match(descriptors1, descriptors2, matches);
+
+            if (matches.size() < 10)
+            {
+                // 匹配点太少，使用简单拼接
+                cv::hconcat(currentResult, nextImg, currentResult);
+                continue;
+            }
+
+            // 筛选好的匹配点
+            std::sort(matches.begin(), matches.end());
+            std::vector<cv::DMatch> goodMatches(matches.begin(), matches.begin() + std::min(50, (int)matches.size()));
+
+            // 获取匹配点坐标
+            std::vector<cv::Point2f> src_pts, dst_pts;
+            for (const auto &match : goodMatches)
+            {
+                src_pts.push_back(keypoints1[match.queryIdx].pt);
+                dst_pts.push_back(keypoints2[match.trainIdx].pt);
+            }
+
+            // 计算单应性矩阵
+            cv::Mat H = cv::findHomography(src_pts, dst_pts, cv::RANSAC, 5.0);
+
+            if (H.empty())
+            {
+                // 无法计算单应性矩阵，使用简单拼接
+                cv::hconcat(currentResult, nextImg, currentResult);
+                continue;
+            }
+
+            // 执行透视变换
+            cv::Mat warped;
+            int warpWidth = currentResult.cols + nextImg.cols;
+            int warpHeight = std::max(currentResult.rows, nextImg.rows);
+
+            cv::warpPerspective(currentResult, warped, H, cv::Size(warpWidth, warpHeight));
+
+            // 将下一张图片融合到结果中
+            cv::Mat roi(warped, cv::Rect(0, 0, nextImg.cols, nextImg.rows));
+            nextImg.copyTo(roi);
+
+            currentResult = warped;
+        }
+
+        return currentResult;
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "智能拼接异常: " << e.what() << std::endl;
+
+        // 最后的备用方案：简单拼接
+        try
+        {
+            cv::Mat simpleResult;
+
+            // 判断拼接方向
+            bool doVertical = true;
+            int totalWidth = 0, totalHeight = 0;
+
+            for (const auto &img : images)
+            {
+                totalWidth += img.cols;
+                totalHeight += img.rows;
+            }
+
+            // 如果平均宽度大于平均高度，进行垂直拼接
+            double avgWidth = (double)totalWidth / images.size();
+            double avgHeight = (double)totalHeight / images.size();
+
+            if (avgWidth > avgHeight)
+            {
+                cv::vconcat(images, simpleResult);
+            }
+            else
+            {
+                cv::hconcat(images, simpleResult);
+            }
+
+            return simpleResult;
+        }
+        catch (...)
+        {
+            return cv::Mat();
+        }
+    }
+}
+
+// 创建自动拼接场景
+void MainWindow::createAutoStitchScene(QGraphicsScene *scene, const cv::Mat &stitchedResult)
+{
+    if (!scene || stitchedResult.empty())
+        return;
+
+    // 将OpenCV的BGR格式转换为RGB格式
+    cv::Mat rgbImage;
+    if (stitchedResult.channels() == 3)
+    {
+        cv::cvtColor(stitchedResult, rgbImage, cv::COLOR_BGR2RGB);
+    }
+    else
+    {
+        rgbImage = stitchedResult.clone();
+    }
+
+    // 创建QImage
+    QImage qimg(rgbImage.data, rgbImage.cols, rgbImage.rows, rgbImage.step,
+                rgbImage.channels() == 3 ? QImage::Format_RGB888 : QImage::Format_Grayscale8);
+
+    // 转换为QPixmap
+    QPixmap pixmap = QPixmap::fromImage(qimg);
+
+    // 创建可拖动的图片项（MV_NONE表示不可移动，因为这是最终结果）
+    MovablePixmapItem *item = new MovablePixmapItem(pixmap, MV_V, 0, 0, 0);
+    item->setFlag(QGraphicsItem::ItemIsMovable, false); // 设为不可移动
+    item->setFlag(QGraphicsItem::ItemIsSelectable, true); // 可选择
+
+    scene->addItem(item);
+
+    // 居中显示
+    QRectF sceneRect = item->boundingRect();
+    scene->setSceneRect(sceneRect);
 }
 // 事件过滤器
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
